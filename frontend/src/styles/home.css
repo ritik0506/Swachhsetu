@@ -1,0 +1,18 @@
+.hero {
+  text-align: center;
+  padding: 100px 20px;
+  background: linear-gradient(135deg, #1a936f, #88d498);
+  color: white;
+}
+.hero button {
+  background: white;
+  color: #1a936f;
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+.info-section {
+  padding: 40px;
+  text-align: center;
+}
