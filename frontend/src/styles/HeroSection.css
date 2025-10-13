@@ -1,0 +1,136 @@
+/* Hero Section */
+.hero {
+  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+  padding: 100px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 40px;
+}
+
+/* Text Section */
+.hero-text {
+  flex: 1 1 500px;
+}
+
+.hero-text h1 {
+  font-size: 48px;
+  color: #1e3a8a;
+  margin-bottom: 20px;
+}
+
+.hero-text p {
+  font-size: 18px;
+  line-height: 1.7;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.hero-buttons button {
+  padding: 12px 25px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  color: #fff;
+  background-color: #3b82f6;
+}
+
+.hero-buttons button:hover {
+  background-color: #2563eb;
+  transform: translateY(-3px);
+}
+
+.hero-buttons .learn-btn {
+  background-color: #1e3a8a;
+}
+
+.hero-buttons .learn-btn:hover {
+  background-color: #1e40af;
+}
+
+/* Image Section */
+.hero-image {
+  flex: 1 1 450px;
+  text-align: center;
+}
+
+.hero-image img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Animations */
+@keyframes fadeInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.fade-in-left {
+  animation: fadeInLeft 1s forwards;
+}
+
+.fade-in-right {
+  animation: fadeInRight 1s forwards;
+}
+
+.delay-1 {
+  animation-delay: 0.3s;
+}
+
+.delay-2 {
+  animation-delay: 0.6s;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .hero-container {
+    flex-direction: column-reverse;
+    text-align: center;
+    gap: 30px;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+  }
+
+  .hero-image {
+    max-width: 100%;
+  }
+}

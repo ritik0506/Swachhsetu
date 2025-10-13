@@ -1,0 +1,131 @@
+.register-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #f5f7fa, #e8ecf3);
+  font-family: "Poppins", sans-serif;
+  padding: 20px;
+}
+
+.register-container {
+  background: #ffffff;
+  width: 100%;
+  max-width: 450px;
+  padding: 40px 35px;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.register-container:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.register-container h2 {
+  font-size: 28px;
+  color: #333;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.register-subtitle {
+  font-size: 14px;
+  color: #777;
+  margin-bottom: 25px;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #444;
+  font-size: 14px;
+}
+
+.input-group input,
+.role-select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 15px;
+  background: #fdfdfd;
+  transition: all 0.3s ease;
+}
+
+.input-group input:focus,
+.role-select:focus {
+  border-color: #56b6f7;
+  box-shadow: 0 0 5px rgba(86, 182, 247, 0.3);
+  outline: none;
+}
+
+.password-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.password-wrapper input {
+  width: 100%;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #777;
+}
+
+.register-btn {
+  background: linear-gradient(135deg, #4fa8f7, #56b6f7);
+  border: none;
+  color: #fff;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.register-btn:hover {
+  background: linear-gradient(135deg, #3c93e6, #4fa8f7);
+  transform: scale(1.03);
+}
+
+.login-redirect {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #555;
+}
+
+.login-redirect span {
+  color: #3c93e6;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.login-redirect span:hover {
+  text-decoration: underline;
+}
+.error-message {
+  color: #e74c3c;
+  font-size: 13px;
+  margin-top: -10px;
+  margin-bottom: 10px;
+}
