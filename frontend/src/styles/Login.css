@@ -58,7 +58,93 @@ body {
 .login-subtitle {
   font-size: 0.95rem;
   color: #777;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Test Accounts Section */
+.test-accounts-section {
+  margin-bottom: 1.5rem;
+}
+
+.test-accounts-title {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.test-accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.test-account-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
+  border: 2px solid;
+  border-radius: 12px;
+  background: #fafafa;
+  transition: all 0.3s ease;
+  min-height: 140px;
+  justify-content: center;
+}
+
+.test-account-card:hover {
+  background: white;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.test-account-info {
+  flex: 1;
+  text-align: center;
+  width: 100%;
+}
+
+.test-account-info h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.test-account-info p {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.test-account-hint {
+  font-size: 0.7rem;
+  color: #999;
+  font-style: italic;
+  display: block;
+  margin-top: 0.25rem;
+}
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+  color: #999;
+  font-size: 0.875rem;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.divider span {
+  padding: 0 1rem;
 }
 
 .form-group {
@@ -165,6 +251,27 @@ select:focus {
   color: #5b6efb;
   text-decoration: underline;
 }
+/* Responsive Design */
+@media (max-width: 600px) {
+  .test-accounts-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .test-account-card {
+    min-height: 120px;
+    padding: 1rem;
+  }
+
+  .test-account-info h4 {
+    font-size: 1rem;
+  }
+
+  .test-account-info p {
+    font-size: 0.75rem;
+  }
+}
+
 @media (max-width: 480px) {
   .login-container {
     padding: 2rem 1.5rem;
@@ -173,11 +280,16 @@ select:focus {
   .login-title {
     font-size: 1.5rem;
   }
-}
 
   .login-subtitle {
     font-size: 0.85rem;
   }
-    .form-group {
-        margin-bottom: 1rem;
-    }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .divider span {
+    font-size: 0.8rem;
+  }
+}

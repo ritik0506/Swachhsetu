@@ -1,0 +1,345 @@
+.toilet-finder-page {
+  min-height: calc(100vh - 70px);
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  padding: 2rem 0;
+}
+
+.search-section {
+  background: white;
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+}
+
+.search-form {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.search-input-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.search-input-group:focus-within {
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-input-group svg {
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.search-input-group input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.search-input-group input::placeholder {
+  color: #9ca3af;
+}
+
+.search-btn,
+.location-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.search-btn {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.search-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.location-btn {
+  background: white;
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
+}
+
+.location-btn:hover {
+  background: #3b82f6;
+  color: white;
+}
+
+.finder-content {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 2rem;
+}
+
+.map-container,
+.toilets-list {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.toilets-list h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+.toilet-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.toilet-cards::-webkit-scrollbar {
+  width: 6px;
+}
+
+.toilet-cards::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.toilet-cards::-webkit-scrollbar-thumb {
+  background: #3b82f6;
+  border-radius: 10px;
+}
+
+.toilet-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.toilet-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border-color: #3b82f6;
+}
+
+.toilet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.toilet-header h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: #fbbf24;
+}
+
+.toilet-body {
+  padding: 1.25rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.info-item svg {
+  flex-shrink: 0;
+  color: #3b82f6;
+}
+
+.facilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.facility-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.facility-tag svg {
+  flex-shrink: 0;
+}
+
+.toilet-footer {
+  padding: 1rem 1.25rem;
+  background: rgba(59, 130, 246, 0.03);
+  border-top: 2px solid #e5e7eb;
+}
+
+.directions-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.directions-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+}
+
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.no-results svg {
+  color: #d1d5db;
+  margin-bottom: 1rem;
+}
+
+.map-popup h4 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.map-popup p {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.popup-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: #fbbf24;
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .finder-content {
+    grid-template-columns: 1fr;
+  }
+
+  .map-container {
+    order: 1;
+  }
+
+  .toilets-list {
+    order: 2;
+  }
+
+  .toilet-cards {
+    max-height: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .toilet-finder-page {
+    padding: 1rem 0;
+  }
+
+  .page-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .header-content h1 {
+    font-size: 1.5rem;
+  }
+
+  .search-form {
+    flex-direction: column;
+  }
+
+  .search-btn,
+  .location-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .map-container {
+    padding: 1rem;
+  }
+
+  .toilets-list {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-content h1 {
+    font-size: 1.25rem;
+  }
+
+  .search-input-group {
+    padding: 0.75rem 1rem;
+  }
+
+  .toilet-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

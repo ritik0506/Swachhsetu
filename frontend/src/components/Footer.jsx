@@ -24,7 +24,7 @@ const Footer = () => {
           <div className="contact-info">
             <p>Email: support@swachhsetu.com</p>
             <p>Phone: +91 9876543210</p>
-            <p>Address: 123 Clean Street, City, India</p>
+            <p>Address: jp nagar Benagalur, India</p>
           </div>
         </div>
 

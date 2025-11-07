@@ -1,37 +1,60 @@
 import React, { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 import "../styles/Register.css";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
-    role: "user", // default role
+    phone: ""
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match!");
+      toast.error("Passwords do not match!");
       return;
     }
 
-    console.log("Registering:", form);
+    if (form.password.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      return;
+    }
 
-    // Redirect based on role after registration
-    if (form.role === "admin") {
-      navigate("/admin-dashboard"); // Example route for admin
-    } else {
-      navigate("/dashboard"); // Example route for user
+    setLoading(true);
+
+    try {
+      const result = await register({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        phone: form.phone
+      });
+      
+      if (result.success) {
+        toast.success("Registration successful! Welcome to SwachhSetu!");
+        navigate("/dashboard");
+      } else {
+        toast.error(result.message || "Registration failed. Please try again.");
+      }
+    } catch (error) {
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -40,8 +63,17 @@ const Register = () => {
       <div className="register-container">
         <h2>Create an Account</h2>
         <p className="register-subtitle">
-          Join SwachhSetu and manage access based on your role 🌿
+          Join SwachhSetu and start reporting civic hygiene issues 🌿
         </p>
+
+        {/* Info Box */}
+        <div className="info-box">
+          <User size={20} />
+          <div>
+            <strong>New users register as "User" role</strong>
+            <p>Report issues, earn points, and climb the leaderboard!</p>
+          </div>
+        </div>
 
         <form className="register-form" onSubmit={handleSubmit}>
           <div className="input-group">
@@ -68,16 +100,28 @@ const Register = () => {
             />
           </div>
 
+          <div className="input-group">
+            <label>Phone Number (Optional)</label>
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Enter your phone number"
+              value={form.phone}
+              onChange={handleChange}
+            />
+          </div>
+
           <div className="input-group password-group">
             <label>Password</label>
             <div className="password-wrapper">
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
-                placeholder="Enter password"
+                placeholder="Enter password (min 6 characters)"
                 value={form.password}
                 onChange={handleChange}
                 required
+                minLength={6}
               />
               <span
                 className="password-toggle"
@@ -108,21 +152,8 @@ const Register = () => {
             </div>
           </div>
 
-          <div className="input-group">
-            <label>Register As</label>
-            <select
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-              className="role-select"
-            >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-
-          <button type="submit" className="register-btn">
-            Register
+          <button type="submit" className="register-btn" disabled={loading}>
+            {loading ? "Creating Account..." : "Register"}
           </button>
 
           <p className="login-redirect">
