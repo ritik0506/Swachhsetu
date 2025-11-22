@@ -153,13 +153,28 @@ const Register = () => {
           </div>
 
           <button type="submit" className="register-btn" disabled={loading}>
-            {loading ? "Creating Account..." : "Register"}
+            {loading ? (
+              <>
+                <span className="spinner"></span>
+                Creating Account...
+              </>
+            ) : (
+              "Create Account"
+            )}
           </button>
 
-          <p className="login-redirect">
-            Already have an account?{" "}
-            <span onClick={() => navigate("/login")}>Login here</span>
-          </p>
+          <div className="form-footer">
+            <p className="login-prompt">
+              Already have an account?
+            </p>
+            <button 
+              type="button"
+              className="login-btn-link"
+              onClick={() => navigate("/login")}
+            >
+              Sign In
+            </button>
+          </div>
         </form>
       </div>
     </div>

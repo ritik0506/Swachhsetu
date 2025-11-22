@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from "react";
-import DashboardCard from "../components/DashboardCard";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { 
-  AlertCircle, 
   CheckCircle, 
   Clock, 
-  TrendingUp,
   MapPin,
-  Users,
-  Award
+  Award,
+  Plus,
+  Calendar,
+  Target,
+  Trophy,
+  Zap,
+  Activity
 } from "lucide-react";
 import "./Dashboard.css";
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalReports: 0,
     resolvedReports: 0,
@@ -22,10 +26,12 @@ const Dashboard = () => {
     inProgressReports: 0,
     averageResponseTime: 0,
     userPoints: 0,
+    userLevel: 1,
     userRank: 0
   });
   const [recentReports, setRecentReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [todaysSchedule, setTodaysSchedule] = useState([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -35,38 +41,26 @@ const Dashboard = () => {
     try {
       setLoading(true);
       
-      // Fetch reports statistics
-      const reportsResponse = await api.get('/reports');
-      const reports = reportsResponse.data;
-      
-      const totalReports = reports.length;
-      const resolvedReports = reports.filter(r => r.status === 'resolved').length;
-      const pendingReports = reports.filter(r => r.status === 'pending').length;
-      const inProgressReports = reports.filter(r => r.status === 'in-progress').length;
-      
-      // Calculate average response time
-      const resolvedWithTime = reports.filter(r => 
-        r.status === 'resolved' && r.resolvedAt && r.createdAt
-      );
-      const avgTime = resolvedWithTime.length > 0
-        ? resolvedWithTime.reduce((acc, r) => {
-            const diff = new Date(r.resolvedAt) - new Date(r.createdAt);
-            return acc + diff / (1000 * 60 * 60); // Convert to hours
-          }, 0) / resolvedWithTime.length
-        : 0;
+      const [dashboardRes, scheduleRes] = await Promise.all([
+        api.get('/dashboard/user'),
+        api.get('/garbage/today').catch(() => ({ data: { schedules: [] } }))
+      ]);
 
+      const { stats: dashboardStats, recentReports: reports } = dashboardRes.data.data;
+      
       setStats({
-        totalReports,
-        resolvedReports,
-        pendingReports,
-        inProgressReports,
-        averageResponseTime: avgTime.toFixed(1),
-        userPoints: user?.points || 0,
-        userRank: user?.rank || 0
+        totalReports: dashboardStats.totalReports,
+        resolvedReports: dashboardStats.resolvedReports,
+        pendingReports: dashboardStats.pendingReports,
+        inProgressReports: dashboardStats.inProgressReports,
+        averageResponseTime: dashboardStats.averageResponseTime,
+        userPoints: dashboardStats.userPoints,
+        userLevel: dashboardStats.userLevel,
+        userRank: dashboardStats.userRank
       });
 
-      // Get recent reports (latest 5)
-      setRecentReports(reports.slice(0, 5));
+      setRecentReports(reports);
+      setTodaysSchedule(scheduleRes.data.schedules || []);
       
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -75,34 +69,51 @@ const Dashboard = () => {
     }
   };
 
-  const statsCards = [
+  const quickActions = [
     {
-      title: "Total Reports",
-      count: stats.totalReports,
-      icon: <AlertCircle size={24} />,
+      title: "Report Issue",
+      icon: <Plus size={20} />,
       color: "#3b82f6",
-      bgColor: "rgba(59, 130, 246, 0.1)"
+      action: () => navigate('/report')
     },
     {
-      title: "Resolved Issues",
-      count: stats.resolvedReports,
-      icon: <CheckCircle size={24} />,
+      title: "Garbage Schedule",
+      icon: <Calendar size={20} />,
       color: "#10b981",
-      bgColor: "rgba(16, 185, 129, 0.1)"
+      action: () => navigate('/garbage-schedule')
     },
     {
-      title: "Pending Issues",
-      count: stats.pendingReports,
-      icon: <Clock size={24} />,
+      title: "My Reports",
+      icon: <MapPin size={20} />,
       color: "#f59e0b",
-      bgColor: "rgba(245, 158, 11, 0.1)"
+      action: () => navigate('/waste-report')
+    }
+  ];
+
+  const achievements = [
+    { 
+      name: "First Report", 
+      unlocked: stats.totalReports >= 1,
+      icon: "🎯",
+      description: "Submit your first report"
     },
-    {
-      title: "In Progress",
-      count: stats.inProgressReports,
-      icon: <TrendingUp size={24} />,
-      color: "#8b5cf6",
-      bgColor: "rgba(139, 92, 246, 0.1)"
+    { 
+      name: "Problem Solver", 
+      unlocked: stats.resolvedReports >= 5,
+      icon: "⭐",
+      description: "Get 5 reports resolved"
+    },
+    { 
+      name: "Active Citizen", 
+      unlocked: stats.totalReports >= 10,
+      icon: "🏆",
+      description: "Submit 10 reports"
+    },
+    { 
+      name: "Community Champion", 
+      unlocked: stats.userPoints >= 100,
+      icon: "👑",
+      description: "Earn 100 points"
     }
   ];
 
@@ -112,7 +123,7 @@ const Dashboard = () => {
         <div className="container">
           <div className="loading-spinner">
             <div className="spinner"></div>
-            <p>Loading dashboard data...</p>
+            <p>Loading dashboard...</p>
           </div>
         </div>
       </div>
@@ -122,85 +133,168 @@ const Dashboard = () => {
   return (
     <div className="dashboard-page">
       <div className="container">
-        <div className="dashboard-header">
-          <div className="header-content">
-            <h2>Welcome back, {user?.name}! 👋</h2>
-            <p>Real-time overview of civic hygiene management</p>
+        {/* Hero Section */}
+        <div className="dashboard-hero">
+          <div className="hero-content">
+            <h1>Welcome back, {user?.name}! 👋</h1>
+            <p className="hero-subtitle">Your personal civic action hub</p>
           </div>
-          <div className="user-stats">
-            <div className="stat-badge">
-              <Award size={20} />
-              <span>{stats.userPoints} Points</span>
+          <div className="user-level-card">
+            <div className="level-icon">
+              <Trophy size={32} color="#fbbf24" />
+            </div>
+            <div className="level-info">
+              <span className="level-label">Level {stats.userLevel}</span>
+              <div className="points-display">
+                <Zap size={16} color="#fbbf24" />
+                <span>{stats.userPoints} Points</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="dashboard-grid">
-          {statsCards.map((item, idx) => (
-            <div 
-              key={idx} 
-              className="stat-card-enhanced"
-              style={{ 
-                '--card-color': item.color,
-                '--card-bg': item.bgColor 
-              }}
-            >
-              <div className="stat-icon" style={{ backgroundColor: item.bgColor, color: item.color }}>
-                {item.icon}
-              </div>
-              <div className="stat-content">
-                <h3>{item.count}</h3>
-                <p>{item.title}</p>
-              </div>
-            </div>
-          ))}
+        {/* Quick Actions */}
+        <div className="quick-actions-section">
+          <h3 className="section-title">Quick Actions</h3>
+          <div className="quick-actions-grid">
+            {quickActions.map((action, idx) => (
+              <button
+                key={idx}
+                className="quick-action-btn"
+                onClick={action.action}
+                style={{ '--action-color': action.color }}
+              >
+                <div className="action-icon" style={{ backgroundColor: `${action.color}15` }}>
+                  {action.icon}
+                </div>
+                <span>{action.title}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="dashboard-sections">
-          <div className="recent-reports-section">
-            <h3>
-              <MapPin size={20} />
-              Recent Reports
+        {/* Stats Overview */}
+        <div className="stats-overview">
+          <div className="stat-box">
+            <div className="stat-header">
+              <MapPin size={20} color="#3b82f6" />
+              <span>Total Reports</span>
+            </div>
+            <div className="stat-value">{stats.totalReports}</div>
+          </div>
+          <div className="stat-box">
+            <div className="stat-header">
+              <CheckCircle size={20} color="#10b981" />
+              <span>Resolved</span>
+            </div>
+            <div className="stat-value">{stats.resolvedReports}</div>
+          </div>
+          <div className="stat-box">
+            <div className="stat-header">
+              <Clock size={20} color="#f59e0b" />
+              <span>Pending</span>
+            </div>
+            <div className="stat-value">{stats.pendingReports}</div>
+          </div>
+          <div className="stat-box">
+            <div className="stat-header">
+              <Target size={20} color="#8b5cf6" />
+              <span>Avg Response</span>
+            </div>
+            <div className="stat-value">{stats.averageResponseTime}h</div>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="dashboard-content-grid">
+          {/* Recent Activity */}
+          <div className="content-card recent-activity-card">
+            <h3 className="card-title">
+              <Activity size={20} />
+              Recent Activity
             </h3>
             {recentReports.length > 0 ? (
-              <div className="reports-list">
-                {recentReports.map((report) => (
-                  <div key={report._id} className="report-item">
-                    <div className="report-info">
+              <div className="activity-list">
+                {recentReports.slice(0, 5).map((report) => (
+                  <div key={report._id} className="activity-item">
+                    <div className={`activity-indicator ${report.status}`}></div>
+                    <div className="activity-content">
                       <h4>{report.issueType}</h4>
-                      <p>{report.description?.substring(0, 80)}...</p>
-                      <span className="report-time">
-                        {new Date(report.createdAt).toLocaleDateString()}
-                      </span>
+                      <p>{report.description?.substring(0, 60)}...</p>
+                      <div className="activity-meta">
+                        <span className={`status-pill ${report.status}`}>
+                          {report.status}
+                        </span>
+                        <span className="time-ago">
+                          {new Date(report.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
-                    <span className={`status-badge ${report.status}`}>
-                      {report.status}
-                    </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="no-data">No reports available</p>
+              <div className="empty-state">
+                <MapPin size={48} color="#cbd5e1" />
+                <p>No activity yet</p>
+                <button className="btn-primary" onClick={() => navigate('/report')}>
+                  Submit Your First Report
+                </button>
+              </div>
             )}
           </div>
 
-          <div className="quick-stats">
-            <h3>Quick Stats</h3>
-            <div className="quick-stat-item">
-              <span>Average Response Time</span>
-              <strong>{stats.averageResponseTime} hrs</strong>
+          {/* Achievements & Today's Schedule */}
+          <div className="sidebar-cards">
+            {/* Achievements */}
+            <div className="content-card achievements-card">
+              <h3 className="card-title">
+                <Award size={20} />
+                Achievements
+              </h3>
+              <div className="achievements-grid">
+                {achievements.map((achievement, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`achievement-badge ${achievement.unlocked ? 'unlocked' : 'locked'}`}
+                    title={achievement.description}
+                  >
+                    <span className="achievement-icon">{achievement.icon}</span>
+                    <span className="achievement-name">{achievement.name}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="quick-stat-item">
-              <span>Resolution Rate</span>
-              <strong>
-                {stats.totalReports > 0 
-                  ? ((stats.resolvedReports / stats.totalReports) * 100).toFixed(1)
-                  : 0}%
-              </strong>
-            </div>
-            <div className="quick-stat-item">
-              <span>Active Issues</span>
-              <strong>{stats.pendingReports + stats.inProgressReports}</strong>
+
+            {/* Today's Garbage Schedule */}
+            <div className="content-card schedule-card">
+              <h3 className="card-title">
+                <Calendar size={20} />
+                Today's Collection
+              </h3>
+              {todaysSchedule.length > 0 ? (
+                <div className="schedule-list">
+                  {todaysSchedule.slice(0, 3).map((schedule) => (
+                    <div key={schedule._id} className="schedule-item">
+                      <div className="schedule-location">
+                        <MapPin size={16} />
+                        <span>{schedule.area}</span>
+                      </div>
+                      <div className="schedule-time">
+                        {schedule.todaySlots?.[0]?.startTime || 'TBD'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="schedule-empty">No collections scheduled today</p>
+              )}
+              <button 
+                className="view-more-btn"
+                onClick={() => navigate('/garbage-schedule')}
+              >
+                View Full Schedule →
+              </button>
             </div>
           </div>
         </div>

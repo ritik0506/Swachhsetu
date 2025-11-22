@@ -319,6 +319,31 @@ const EnhancedReportIssue = () => {
                   <MapPin size={18} />
                   Select Location on Map
                 </label>
+                <button
+                  type="button"
+                  className="btn btn-outline get-location-btn"
+                  onClick={() => {
+                    if (navigator.geolocation) {
+                      toast.info('Getting your location...');
+                      navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                          setPosition([pos.coords.latitude, pos.coords.longitude]);
+                          toast.success('Location updated!');
+                        },
+                        (error) => {
+                          console.error('Error getting location:', error);
+                          toast.error('Unable to get location. Please allow location access.');
+                        },
+                        { enableHighAccuracy: true }
+                      );
+                    } else {
+                      toast.error('Geolocation is not supported by your browser');
+                    }
+                  }}
+                >
+                  <MapPin size={18} />
+                  Get Current Location
+                </button>
                 <div className="map-container">
                   <MapContainer
                     center={position}
@@ -332,7 +357,7 @@ const EnhancedReportIssue = () => {
                     <LocationMarker position={position} setPosition={setPosition} />
                   </MapContainer>
                 </div>
-                <p className="map-hint">Click on the map to set the exact location</p>
+                <p className="map-hint">Click on the map to set the exact location or use the button above</p>
               </div>
 
               <div className="form-group">

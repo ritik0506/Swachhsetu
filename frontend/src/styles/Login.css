@@ -204,34 +204,91 @@ select:focus {
 
 .login-btn {
   width: 100%;
-  padding: 0.9rem;
+  padding: 1rem;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
-  background: linear-gradient(135deg, #7b8efb, #a1b4ff);
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
   color: white;
-  margin-top: 0.8rem;
+  margin-top: 0.5rem;
   transition: all 0.3s ease;
   cursor: pointer;
-  box-shadow: 0 5px 15px rgba(123, 142, 251, 0.3);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-.login-btn:hover {
-  background: linear-gradient(135deg, #6b7ef9, #94a8ff);
+.login-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 .login-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.7;
   cursor: not-allowed;
+  transform: none;
+}
+
+.login-btn .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .error-text {
-  color: #ff5a5a;
-  font-size: 0.9rem;
+  color: #ef4444;
+  font-size: 0.875rem;
   margin-bottom: 0.5rem;
   text-align: center;
+  font-weight: 500;
+}
+
+.form-footer {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.signup-prompt,
+.login-prompt {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.signup-btn,
+.login-btn-link {
+  width: 100%;
+  padding: 0.875rem;
+  border: 2px solid #3b82f6;
+  background: transparent;
+  color: #3b82f6;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.signup-btn:hover,
+.login-btn-link:hover {
+  background: #3b82f6;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
 }
 
 .form-links {
@@ -242,13 +299,13 @@ select:focus {
 
 .link {
   font-size: 0.9rem;
-  color: #7b8efb;
+  color: #3b82f6;
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .link:hover {
-  color: #5b6efb;
+  color: #2563eb;
   text-decoration: underline;
 }
 /* Responsive Design */

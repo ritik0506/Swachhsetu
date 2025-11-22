@@ -2,6 +2,69 @@ const Report = require('../models/Report');
 const User = require('../models/User');
 const Gamification = require('../models/Gamification');
 
+// @desc    Get user-specific dashboard
+// @route   GET /api/dashboard/user
+// @access  Private
+exports.getUserDashboard = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get user's reports
+    const userReports = await Report.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('issueType description status createdAt resolvedAt location');
+
+    const totalReports = await Report.countDocuments({ userId });
+    const resolvedReports = await Report.countDocuments({ userId, status: 'resolved' });
+    const pendingReports = await Report.countDocuments({ userId, status: 'pending' });
+    const inProgressReports = await Report.countDocuments({ userId, status: 'in-progress' });
+
+    // Calculate average response time for user's reports
+    const resolvedWithTime = await Report.find({
+      userId,
+      status: 'resolved',
+      resolvedAt: { $exists: true }
+    }).select('createdAt resolvedAt');
+
+    let avgResponseTime = 0;
+    if (resolvedWithTime.length > 0) {
+      const totalTime = resolvedWithTime.reduce((acc, report) => {
+        const diff = report.resolvedAt - report.createdAt;
+        return acc + diff;
+      }, 0);
+      avgResponseTime = totalTime / resolvedWithTime.length / (1000 * 60 * 60); // in hours
+    }
+
+    // Get user's gamification data
+    const gamificationData = await Gamification.findOne({ userId });
+
+    res.json({
+      success: true,
+      data: {
+        stats: {
+          totalReports,
+          resolvedReports,
+          pendingReports,
+          inProgressReports,
+          averageResponseTime: avgResponseTime.toFixed(1),
+          userPoints: gamificationData?.totalPoints || 0,
+          userLevel: gamificationData?.level?.current || 1,
+          userRank: 0 // Can calculate rank if needed
+        },
+        recentReports: userReports
+      }
+    });
+  } catch (error) {
+    console.error('Get user dashboard error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch user dashboard', 
+      error: error.message 
+    });
+  }
+};
+
 // @desc    Get dashboard statistics
 // @route   GET /api/dashboard/stats
 // @access  Public

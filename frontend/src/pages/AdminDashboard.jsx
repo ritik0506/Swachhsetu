@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield,
   Users,
@@ -11,11 +11,20 @@ import {
   Settings,
   Search,
   Filter,
-  Download
+  Download,
+  Eye,
+  X,
+  MapPin,
+  Calendar,
+  User,
+  Image as ImageIcon,
+  MessageSquare,
+  Map
 } from 'lucide-react';
 import { adminAPI } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import WasteDumpMap from '../components/WasteDumpMap';
 import { toast } from 'react-toastify';
 import './AdminDashboard.css';
 
@@ -27,6 +36,8 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedReports, setSelectedReports] = useState([]);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
     category: '',
@@ -114,6 +125,16 @@ const AdminDashboard = () => {
     }
   };
 
+  const viewReportDetails = (report) => {
+    setSelectedReport(report);
+    setShowDetailModal(true);
+  };
+
+  const closeDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedReport(null);
+  };
+
   const handleRoleChange = async (userId, newRole) => {
     try {
       await adminAPI.updateUserRole(userId, newRole);
@@ -164,19 +185,48 @@ const AdminDashboard = () => {
 
   return (
     <div className="admin-dashboard">
-      {/* Header */}
+      {/* Enhanced Header */}
       <div className="admin-header">
-        <div>
-          <h1>
-            <Shield size={32} />
-            Admin Dashboard
-          </h1>
-          <p>Welcome back, {user.name} ({user.role})</p>
+        <div className="header-left">
+          <div className="header-icon">
+            <Shield size={36} />
+          </div>
+          <div className="header-content">
+            <h1>Admin Dashboard</h1>
+            <p>Welcome back, <span className="user-highlight">{user.name}</span> • <span className="role-badge">{user.role}</span></p>
+          </div>
         </div>
-        <button className="btn btn-primary" onClick={fetchAdminData}>
-          <Download size={18} />
-          Refresh Data
-        </button>
+        <div className="header-right">
+          {stats && (
+            <div className="header-stats">
+              <div className="stat-box pending">
+                <Clock size={20} />
+                <div>
+                  <span className="stat-number">{stats.overview.pendingReports}</span>
+                  <span className="stat-label">Pending</span>
+                </div>
+              </div>
+              <div className="stat-box progress">
+                <Settings size={20} />
+                <div>
+                  <span className="stat-number">{stats.overview.inProgressReports}</span>
+                  <span className="stat-label">In Progress</span>
+                </div>
+              </div>
+              <div className="stat-box resolved">
+                <CheckCircle size={20} />
+                <div>
+                  <span className="stat-number">{stats.overview.resolvedReports}</span>
+                  <span className="stat-label">Resolved</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <button className="refresh-btn" onClick={fetchAdminData}>
+            <Download size={18} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -194,6 +244,13 @@ const AdminDashboard = () => {
         >
           <FileText size={18} />
           Manage Reports
+        </button>
+        <button
+          className={`tab ${activeTab === 'map' ? 'active' : ''}`}
+          onClick={() => setActiveTab('map')}
+        >
+          <Map size={18} />
+          Waste Dump Map
         </button>
         {user.role === 'admin' && (
           <button
@@ -424,21 +481,41 @@ const AdminDashboard = () => {
                       </select>
                     </td>
                     <td>
-                      {user.role === 'admin' && (
+                      <div className="action-buttons">
                         <button
-                          onClick={() => handleDeleteReport(report._id)}
-                          className="btn-delete"
-                          title="Delete"
+                          onClick={() => viewReportDetails(report)}
+                          className="btn-view"
+                          title="View Details"
                         >
-                          🗑️
+                          <Eye size={16} />
                         </button>
-                      )}
+                        {user.role === 'admin' && (
+                          <button
+                            onClick={() => handleDeleteReport(report._id)}
+                            className="btn-delete"
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        </motion.div>
+      )}
+
+      {/* Waste Dump Map Tab */}
+      {activeTab === 'map' && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="map-tab-content"
+        >
+          <WasteDumpMap />
         </motion.div>
       )}
 
@@ -504,6 +581,208 @@ const AdminDashboard = () => {
           </div>
         </motion.div>
       )}
+
+      {/* Report Detail Modal */}
+      <AnimatePresence>
+        {showDetailModal && selectedReport && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeDetailModal}
+          >
+            <motion.div
+              className="report-detail-modal"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="modal-header">
+                <h2>Report Details</h2>
+                <button onClick={closeDetailModal} className="close-btn">
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="modal-content">
+                {/* Report Info Section */}
+                <div className="detail-section">
+                  <div className="section-header">
+                    <FileText size={20} />
+                    <h3>Report Information</h3>
+                  </div>
+                  <div className="detail-grid">
+                    <div className="detail-item">
+                      <label>Title</label>
+                      <p className="detail-value">{selectedReport.title}</p>
+                    </div>
+                    <div className="detail-item">
+                      <label>Issue Type</label>
+                      <p className="detail-value">{selectedReport.issueType || selectedReport.category}</p>
+                    </div>
+                    <div className="detail-item">
+                      <label>Category</label>
+                      <span className="badge badge-info">{selectedReport.category}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Severity</label>
+                      <span className={`badge badge-${selectedReport.severity === 'critical' ? 'danger' : selectedReport.severity === 'high' ? 'warning' : 'info'}`}>
+                        {selectedReport.severity}
+                      </span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Status</label>
+                      <span className={`badge badge-${selectedReport.status}`}>{selectedReport.status}</span>
+                    </div>
+                    <div className="detail-item">
+                      <label>Report ID</label>
+                      <p className="detail-value detail-id">{selectedReport._id}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description Section */}
+                <div className="detail-section">
+                  <div className="section-header">
+                    <MessageSquare size={20} />
+                    <h3>Description</h3>
+                  </div>
+                  <p className="description-text">{selectedReport.description}</p>
+                </div>
+
+                {/* Location Section */}
+                <div className="detail-section">
+                  <div className="section-header">
+                    <MapPin size={20} />
+                    <h3>Location Details</h3>
+                  </div>
+                  <div className="detail-grid">
+                    <div className="detail-item full-width">
+                      <label>Address</label>
+                      <p className="detail-value">{selectedReport.location?.address || 'Not provided'}</p>
+                    </div>
+                    <div className="detail-item">
+                      <label>Coordinates</label>
+                      <p className="detail-value">
+                        {selectedReport.location?.coordinates?.[1]?.toFixed(6)}, {selectedReport.location?.coordinates?.[0]?.toFixed(6)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reporter Section */}
+                <div className="detail-section">
+                  <div className="section-header">
+                    <User size={20} />
+                    <h3>Reporter Information</h3>
+                  </div>
+                  <div className="reporter-info">
+                    <img
+                      src={selectedReport.userId?.avatar || `https://ui-avatars.com/api/?name=${selectedReport.userId?.name}`}
+                      alt={selectedReport.userId?.name}
+                      className="reporter-avatar"
+                    />
+                    <div className="reporter-details">
+                      <p className="reporter-name">{selectedReport.userId?.name}</p>
+                      <p className="reporter-email">{selectedReport.userId?.email}</p>
+                      <p className="reporter-meta">Level {selectedReport.userId?.level} • {selectedReport.userId?.points} points</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timeline Section */}
+                <div className="detail-section">
+                  <div className="section-header">
+                    <Calendar size={20} />
+                    <h3>Timeline</h3>
+                  </div>
+                  <div className="timeline">
+                    <div className="timeline-item">
+                      <div className="timeline-dot"></div>
+                      <div className="timeline-content">
+                        <p className="timeline-label">Created</p>
+                        <p className="timeline-value">{new Date(selectedReport.createdAt).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <div className="timeline-item">
+                      <div className="timeline-dot"></div>
+                      <div className="timeline-content">
+                        <p className="timeline-label">Last Updated</p>
+                        <p className="timeline-value">{new Date(selectedReport.updatedAt).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    {selectedReport.resolvedAt && (
+                      <div className="timeline-item">
+                        <div className="timeline-dot resolved"></div>
+                        <div className="timeline-content">
+                          <p className="timeline-label">Resolved</p>
+                          <p className="timeline-value">{new Date(selectedReport.resolvedAt).toLocaleString()}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Images Section */}
+                {selectedReport.images && selectedReport.images.length > 0 && (
+                  <div className="detail-section">
+                    <div className="section-header">
+                      <ImageIcon size={20} />
+                      <h3>Attached Images ({selectedReport.images.length})</h3>
+                    </div>
+                    <div className="images-grid">
+                      {selectedReport.images.map((img, idx) => (
+                        <img
+                          key={idx}
+                          src={img}
+                          alt={`Report ${idx + 1}`}
+                          className="report-image"
+                          onClick={() => window.open(img, '_blank')}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Section */}
+                <div className="modal-actions">
+                  <select
+                    value={selectedReport.status}
+                    onChange={(e) => {
+                      handleUpdateStatus(selectedReport._id, e.target.value);
+                      setSelectedReport({ ...selectedReport, status: e.target.value });
+                    }}
+                    className="status-select-modal"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                  {user.role === 'admin' && (
+                    <button
+                      onClick={() => {
+                        handleDeleteReport(selectedReport._id);
+                        closeDetailModal();
+                      }}
+                      className="btn-danger"
+                    >
+                      Delete Report
+                    </button>
+                  )}
+                  <button onClick={closeDetailModal} className="btn-secondary">
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

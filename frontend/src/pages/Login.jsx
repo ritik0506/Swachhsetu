@@ -138,13 +138,27 @@ const Login = () => {
           {error && <p className="error-text">{error}</p>}
 
           <button className="login-btn" type="submit" disabled={loading}>
-            {loading ? "Signing in..." : "Login"}
+            {loading ? (
+              <>
+                <span className="spinner"></span>
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
+            )}
           </button>
 
-          <div className="form-links">
-            <a href="/register" className="link">
-              Don't have an account? <strong>Create Account</strong>
-            </a>
+          <div className="form-footer">
+            <p className="signup-prompt">
+              Don't have an account?
+            </p>
+            <button 
+              type="button"
+              className="signup-btn"
+              onClick={() => navigate("/register")}
+            >
+              Create Account
+            </button>
           </div>
         </form>
       </div>

@@ -10,6 +10,7 @@ const authRoutes = require('./routes/authRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const garbageRoutes = require('./routes/garbageRoutes');
 
 dotenv.config();
 
@@ -48,10 +49,26 @@ app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/garbage', garbageRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'SwachhSetu API is running' });
+});
+
+// Routes test endpoint
+app.get('/api/routes-test', (req, res) => {
+  res.json({
+    success: true,
+    availableRoutes: [
+      '/api/auth/*',
+      '/api/reports/*',
+      '/api/dashboard/*',
+      '/api/admin/*',
+      '/api/garbage/*'
+    ],
+    message: 'All routes are registered'
+  });
 });
 
 // Error handling middleware

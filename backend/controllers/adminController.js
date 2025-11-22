@@ -436,3 +436,82 @@ exports.bulkUpdateReports = async (req, res) => {
     });
   }
 };
+
+// @desc    Get all waste dump reports with location data for map view
+// @route   GET /api/admin/waste-dump-map
+// @access  Private (Admin/Moderator)
+exports.getWasteDumpMapData = async (req, res) => {
+  try {
+    const { category, status, severity, dateFrom, dateTo } = req.query;
+
+    const query = {};
+    
+    // Filter for waste-related categories
+    if (category) {
+      query.category = category;
+    } else {
+      query.category = { $in: ['waste', 'beach', 'street', 'park', 'other'] };
+    }
+    
+    if (status) query.status = status;
+    if (severity) query.severity = severity;
+    
+    // Date range filter
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) query.createdAt.$lte = new Date(dateTo);
+    }
+
+    // Fetch reports with location data
+    const reports = await Report.find(query)
+      .populate('userId', 'name email phone avatar')
+      .populate('assignedTo', 'name email')
+      .select('title description category status severity location images createdAt resolvedAt userId assignedTo priority')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Filter out reports without valid coordinates
+    const validReports = reports.filter(report => 
+      report.location && 
+      report.location.coordinates && 
+      report.location.coordinates.length === 2 &&
+      report.location.coordinates[0] !== 0 &&
+      report.location.coordinates[1] !== 0
+    );
+
+    // Calculate statistics
+    const stats = {
+      total: validReports.length,
+      pending: validReports.filter(r => r.status === 'pending').length,
+      inProgress: validReports.filter(r => r.status === 'in-progress').length,
+      resolved: validReports.filter(r => r.status === 'resolved').length,
+      byCategory: {},
+      bySeverity: {
+        low: validReports.filter(r => r.severity === 'low').length,
+        medium: validReports.filter(r => r.severity === 'medium').length,
+        high: validReports.filter(r => r.severity === 'high').length,
+        critical: validReports.filter(r => r.severity === 'critical').length
+      }
+    };
+
+    // Count by category
+    validReports.forEach(report => {
+      stats.byCategory[report.category] = (stats.byCategory[report.category] || 0) + 1;
+    });
+
+    res.json({
+      success: true,
+      reports: validReports,
+      stats,
+      totalReports: validReports.length
+    });
+  } catch (error) {
+    console.error('Get waste dump map data error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch waste dump map data', 
+      error: error.message 
+    });
+  }
+};

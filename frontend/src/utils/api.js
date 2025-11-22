@@ -75,6 +75,9 @@ export const adminAPI = {
   deleteReport: (id) => api.delete(`/admin/reports/${id}`),
   bulkUpdateReports: (data) => api.put('/admin/reports/bulk-update', data),
   
+  // Waste Dump Map
+  getWasteDumpMapData: (params) => api.get('/admin/waste-dump-map', { params }),
+  
   // Users
   getAllUsers: (params) => api.get('/admin/users', { params }),
   updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),

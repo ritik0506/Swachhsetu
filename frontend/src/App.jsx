@@ -9,11 +9,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import ReportIssue from "./pages/ReportIssue";
 import EnhancedReportIssue from "./pages/EnhancedReportIssue";
 import Dashboard from "./pages/Dashboard";
 import EnhancedDashboard from "./pages/EnhancedDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import Profile from "./pages/Profile";
 import ToiletFinder from "./pages/ToiletFinder";
 import WasteReport from "./pages/WasteReport";
 import RestaurantHygiene from "./pages/RestaurantHygiene";
@@ -33,7 +33,6 @@ const App = () => {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/report" element={<ReportIssue />} />
               <Route 
                 path="/report-issue" 
                 element={
@@ -51,9 +50,17 @@ const App = () => {
                 } 
               />
               <Route 
-                path="/analytics" 
+                path="/profile" 
                 element={
                   <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/analytics" 
+                element={
+                  <ProtectedRoute allowedRoles={['admin', 'moderator']}>
                     <EnhancedDashboard />
                   </ProtectedRoute>
                 } 

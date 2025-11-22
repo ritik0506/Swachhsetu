@@ -7,7 +7,8 @@ const {
   getAllUsers,
   updateUserRole,
   getAdminStatistics,
-  bulkUpdateReports
+  bulkUpdateReports,
+  getWasteDumpMapData
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -20,6 +21,9 @@ router.get('/reports', getAllReports);
 router.put('/reports/:id', updateReport);
 router.delete('/reports/:id', authorize('admin'), deleteReport);
 router.put('/reports/bulk-update', bulkUpdateReports);
+
+// Waste dump map data
+router.get('/waste-dump-map', getWasteDumpMapData);
 
 // User management (admin only)
 router.get('/users', authorize('admin'), getAllUsers);
