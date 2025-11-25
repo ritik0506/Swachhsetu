@@ -80,7 +80,45 @@ const reportSchema = new mongoose.Schema({
     suggestedCategory: String,
     urgencyLevel: String,
     tags: [String],
-    confidence: Number
+    confidence: Number,
+    // New AI triage fields
+    triageCompleted: {
+      type: Boolean,
+      default: false
+    },
+    triageTimestamp: Date,
+    refinedCategory: {
+      type: String,
+      enum: ['toilet', 'waste', 'restaurant', 'beach', 'street', 'park', 'water', 'drainage', 'other']
+    },
+    severity: {
+      type: String,
+      enum: ['low', 'medium', 'high', 'critical']
+    },
+    priority: {
+      type: Number,
+      min: 1,
+      max: 5
+    },
+    suggestedTitle: String,
+    recommendedAction: {
+      type: String,
+      enum: ['create_ticket', 'notify_inspector', 'escalate', 'requires_review', 'ignore']
+    },
+    aiConfidence: {
+      type: Number,
+      min: 0,
+      max: 1
+    },
+    rationale: String,
+    aiTags: [String],
+    requiresImmediateAttention: Boolean,
+    estimatedResolutionTime: String,
+    language: {
+      code: String,
+      name: String,
+      confidence: Number
+    }
   },
   comments: [{
     userId: {

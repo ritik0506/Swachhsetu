@@ -2,6 +2,9 @@ const Report = require('../models/Report');
 const User = require('../models/User');
 const Gamification = require('../models/Gamification');
 const Notification = require('../models/Notification');
+const { aiQueue } = require('../queues/aiQueue');
+const FollowUp = require('../models/FollowUp');
+const aiFollowupService = require('../services/aiFollowupService');
 
 // Helper function to award points and check achievements
 const awardPoints = async (userId, points, action) => {
@@ -114,6 +117,26 @@ exports.createReport = async (req, res) => {
       }
     } catch (socketError) {
       console.warn('Failed to emit socket event:', socketError.message);
+    }
+
+    // Queue AI triage (async - don't wait)
+    try {
+      if (process.env.ENABLE_AI_TRIAGE === 'true') {
+        await aiQueue.add('triage-report', {
+          reportId: report._id.toString(),
+          reportData: {
+            category: report.category,
+            title: report.title,
+            description: report.description,
+            location: report.location,
+            severity: report.severity
+          }
+        });
+        console.log(`AI triage queued for report ${report._id}`);
+      }
+    } catch (aiError) {
+      console.warn('Failed to queue AI triage:', aiError.message);
+      // Don't fail the request if AI queueing fails
     }
 
     res.status(201).json({
@@ -241,6 +264,7 @@ exports.updateReportStatus = async (req, res) => {
       });
     }
 
+    const oldStatus = report.status;
     report.status = status;
     if (status === 'resolved') {
       report.resolvedAt = new Date();
@@ -250,6 +274,30 @@ exports.updateReportStatus = async (req, res) => {
     }
 
     await report.save();
+
+    // Queue automated follow-up if resolved
+    if (status === 'resolved' && oldStatus !== 'resolved' && process.env.ENABLE_AI_FOLLOWUP === 'true') {
+      try {
+        const user = await User.findById(report.userId);
+        if (user) {
+          await aiQueue.add('generate-followup', {
+            reportId: report._id.toString(),
+            userId: user._id.toString(),
+            userName: user.name,
+            reportTitle: report.title,
+            reportCategory: report.category,
+            resolutionDate: report.resolvedAt,
+            userLanguage: report.aiAnalysis?.language?.code || 'en',
+            scheduledDelay: 48 * 60 * 60 * 1000 // 48 hours
+          }, {
+            delay: 48 * 60 * 60 * 1000 // Delay 48 hours
+          });
+          console.log(`Follow-up scheduled for report ${report._id}`);
+        }
+      } catch (followupError) {
+        console.warn('Failed to schedule follow-up:', followupError.message);
+      }
+    }
 
     // Create notification for report creator
     await Notification.create({
