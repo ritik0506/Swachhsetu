@@ -98,8 +98,93 @@ const reportSchema = new mongoose.Schema({
     priority: {
       type: Number,
       min: 1,
-      max: 5
+      max: 10
     },
+    // Forensic analysis fields
+    forensicAnalysis: {
+      is_spam: Boolean,
+      spam_reason: String,
+      civic_category: String,
+      severity_score: Number,
+      visual_evidence: String,
+      confidence: Number,
+      technical_metadata: {
+        width: Number,
+        height: Number,
+        format: String,
+        size_mb: String,
+        aspect_ratio: String
+      },
+      processing_time_ms: Number,
+      analyzed_at: Date
+    },
+    spamDetected: {
+      type: Boolean,
+      default: false
+    },
+    spamReason: String,
+    // Geospatial verification fields
+    geospatialVerification: {
+      environment_type: {
+        type: String,
+        enum: ['Indoor', 'Outdoor', 'Semi-Outdoor (e.g., Balcony/Garage)']
+      },
+      lighting_condition: {
+        type: String,
+        enum: ['Daylight', 'Night - Artificial Light', 'Night - Flash Only']
+      },
+      context_mismatch: Boolean,
+      verification_status: {
+        type: String,
+        enum: ['Verified', 'Suspicious', 'Rejected']
+      },
+      reasoning: String,
+      confidence: Number,
+      image_metadata: {
+        width: Number,
+        height: Number,
+        format: String,
+        hasAlpha: Boolean,
+        space: String
+      },
+      processing_time_ms: Number,
+      verified_at: Date
+    },
+    contextMismatchDetected: {
+      type: Boolean,
+      default: false
+    },
+    contextMismatchReason: String,
+    // Linguistic analysis fields
+    linguisticAnalysis: {
+      english_translation: String,
+      summarized_complaint: String,
+      detected_language: String,
+      extracted_location: String,
+      sentiment_tone: {
+        type: String,
+        enum: ['Neutral', 'Frustrated', 'Angry', 'Urgent']
+      },
+      urgency_rating: {
+        type: String,
+        enum: ['High', 'Medium', 'Low']
+      },
+      confidence: Number,
+      original_transcript: String,
+      processing_time_ms: Number,
+      analyzed_at: Date
+    },
+    // Deduplication fields
+    duplicateDetected: {
+      type: Boolean,
+      default: false
+    },
+    duplicateOf: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Report'
+    },
+    duplicateConfidence: Number,
+    duplicateRationale: String,
     suggestedTitle: String,
     recommendedAction: {
       type: String,

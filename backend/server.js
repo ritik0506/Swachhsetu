@@ -5,6 +5,9 @@ const connectDB = require('./config/db');
 const http = require('http');
 const socketIo = require('socket.io');
 const notificationService = require('./services/notificationService');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const hpp = require('hpp');
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
@@ -13,6 +16,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const garbageRoutes = require('./routes/garbageRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const geocodingRoutes = require('./routes/geocodingRoutes');
 
 dotenv.config();
 
@@ -28,10 +32,57 @@ const io = socketIo(server, {
 // Connect to MongoDB
 connectDB();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// CORS must be configured FIRST before other middleware
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Body parsing middleware (must be before security middleware)
+app.use(express.json({ limit: '10mb' })); // Limit body size
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Security Middleware
+// Set security HTTP headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "http://localhost:5173"], // Allow API calls from frontend
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
+
+// Rate limiting to prevent brute force attacks
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter for AI endpoints (stricter)
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Limit each IP to 20 AI requests per 15 minutes
+  message: 'Too many AI requests, please try again later.',
+});
+
+app.use('/api/', limiter);
+app.use('/api/ai/', aiLimiter);
+
+// Prevent HTTP Parameter Pollution attacks
+app.use(hpp());
+
+// Static files
 app.use('/uploads', express.static('uploads'));
 
 // Socket.io connection
@@ -62,6 +113,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/garbage', garbageRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/geocoding', geocodingRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

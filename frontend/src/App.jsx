@@ -5,6 +5,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { SocketProvider } from "./context/SocketContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import InstallPrompt from "./components/InstallPrompt";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -15,7 +16,6 @@ import EnhancedDashboard from "./pages/EnhancedDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Profile from "./pages/Profile";
 import ToiletFinder from "./pages/ToiletFinder";
-import WasteReport from "./pages/WasteReport";
 import RestaurantHygiene from "./pages/RestaurantHygiene";
 import GarbageSchedule from "./pages/GarbageSchedule";
 import HealthGuide from "./pages/HealthGuide";
@@ -74,13 +74,31 @@ const App = () => {
                 } 
               />
               <Route path="/toilets" element={<ToiletFinder />} />
-              <Route path="/waste-report" element={<WasteReport />} />
               <Route path="/restaurant" element={<RestaurantHygiene />} />
               <Route path="/garbage" element={<GarbageSchedule />} />
+              <Route path="/garbage-schedule" element={<GarbageSchedule />} />
               <Route path="/health-guide" element={<HealthGuide />} />
+              {/* Alias routes for backward compatibility */}
+              <Route 
+                path="/report" 
+                element={
+                  <ProtectedRoute>
+                    <EnhancedReportIssue />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/waste-report" 
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } 
+              />
             </Routes>
           </main>
           <Footer />
+          <InstallPrompt />
           <ToastContainer
             position="top-right"
             autoClose={4000}

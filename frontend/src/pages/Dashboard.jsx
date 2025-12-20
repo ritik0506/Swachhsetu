@@ -74,7 +74,7 @@ const Dashboard = () => {
       title: "Report Issue",
       icon: <Plus size={20} />,
       color: "#3b82f6",
-      action: () => navigate('/report')
+      action: () => navigate('/report-issue')
     },
     {
       title: "Garbage Schedule",
@@ -86,7 +86,7 @@ const Dashboard = () => {
       title: "My Reports",
       icon: <MapPin size={20} />,
       color: "#f59e0b",
-      action: () => navigate('/waste-report')
+      action: () => navigate('/profile')
     }
   ];
 
@@ -237,7 +237,7 @@ const Dashboard = () => {
               <div className="empty-state">
                 <MapPin size={48} color="#cbd5e1" />
                 <p>No activity yet</p>
-                <button className="btn-primary" onClick={() => navigate('/report')}>
+                <button className="btn-primary" onClick={() => navigate('/report-issue')}>
                   Submit Your First Report
                 </button>
               </div>

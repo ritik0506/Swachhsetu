@@ -288,3 +288,32 @@
     transform: scale(1.1);
   }
 }
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Enhanced Map Container */
+.map-container {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Drag and Drop Styling */
+.image-upload-area {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.image-upload-area:hover {
+  border-color: #10b981 !important;
+  background-color: #f0fdf4 !important;
+}
