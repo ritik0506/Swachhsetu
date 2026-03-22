@@ -55,6 +55,25 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  // Inspector-specific fields (FR-4 enhancements)
+  shiftStatus: {
+    type: Boolean,
+    default: false,
+    comment: 'Whether inspector is currently on shift'
+  },
+  vehicleType: {
+    type: String,
+    enum: ['None', 'Bike', 'Car', 'Truck', 'Van', 'Heavy Equipment'],
+    default: 'None',
+    comment: 'Vehicle type available to inspector'
+  },
+  availabilityCalendar: [{
+    date: { type: Date, required: true },
+    shiftStart: { type: String }, // e.g., "09:00"
+    shiftEnd: { type: String },   // e.g., "17:00"
+    isAvailable: { type: Boolean, default: true },
+    notes: String
+  }],
   // User preferences
   notifications: {
     email: { type: Boolean, default: true },

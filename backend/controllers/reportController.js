@@ -5,6 +5,7 @@ const Notification = require('../models/Notification');
 const { aiQueue } = require('../queues/aiQueue');
 const FollowUp = require('../models/FollowUp');
 const aiFollowupService = require('../services/aiFollowupService');
+const deduplicationService = require('../services/deduplicationService');
 
 // Helper function to award points and check achievements
 const awardPoints = async (userId, points, action) => {
@@ -28,13 +29,13 @@ const awardPoints = async (userId, points, action) => {
     }
     gamification.stats[action] = (gamification.stats[action] || 0) + 1;
     
-    // Update level
+    // Update level (cap at 100 per FR-7 specification)
     gamification.level.xp += points;
-    while (gamification.level.xp >= gamification.level.nextLevelXp) {
+    while (gamification.level.xp >= gamification.level.nextLevelXp && gamification.level.current < 100) {
       gamification.level.current += 1;
       gamification.level.xp -= gamification.level.nextLevelXp;
       gamification.level.nextLevelXp = Math.floor(gamification.level.nextLevelXp * 1.5);
-      
+
       // Create level up notification
       try {
         await Notification.create({
@@ -47,6 +48,11 @@ const awardPoints = async (userId, points, action) => {
       } catch (notifError) {
         console.warn('Failed to create level up notification:', notifError.message);
       }
+    }
+
+    // If at max level (100), keep accumulating XP but don't level up
+    if (gamification.level.current >= 100) {
+      gamification.level.current = 100;
     }
     
     await gamification.save();
@@ -77,6 +83,42 @@ exports.createReport = async (req, res) => {
         success: false,
         message: 'Please provide category, title, and description'
       });
+    }
+
+    // Check for duplicate reports (if enabled and not forcing)
+    const forceSubmit = req.body.force === 'true';
+    
+    if (deduplicationService.enabled && !forceSubmit) {
+      try {
+        const reportData = {
+          category,
+          title,
+          description,
+          location: {
+            type: 'Point',
+            coordinates: locationData?.coordinates || [0, 0]
+          },
+          createdAt: new Date()
+        };
+
+        const dupCheck = await deduplicationService.checkDuplicate(reportData);
+        
+        if (dupCheck.success && dupCheck.is_duplicate && dupCheck.confidence_score >= 0.85) {
+          // Return duplicate warning to frontend
+          return res.status(409).json({
+            success: false,
+            isDuplicate: true,
+            duplicateReport: dupCheck.duplicate_of,
+            confidence: dupCheck.confidence_score,
+            recommendation: dupCheck.merge_recommendation,
+            rationale: dupCheck.rationale,
+            message: 'A similar report already exists in this location. Are you sure you want to submit?'
+          });
+        }
+      } catch (dupError) {
+        console.warn('Duplicate detection failed:', dupError.message);
+        // Continue with report creation if duplicate check fails
+      }
     }
     
     const report = await Report.create({
@@ -268,9 +310,9 @@ exports.updateReportStatus = async (req, res) => {
     report.status = status;
     if (status === 'resolved') {
       report.resolvedAt = new Date();
-      
-      // Award points to report creator
-      await awardPoints(report.userId, 20, 'reportsVerified');
+
+      // Award points to report creator (50 points per FR-7 specification)
+      await awardPoints(report.userId, 50, 'reportsVerified');
     }
 
     await report.save();

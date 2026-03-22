@@ -5,6 +5,24 @@ const ollamaService = require('./ollamaService');
  * Suggests optimal inspector assignment based on location, skills, availability, and workload
  */
 class AIAssignmentService {
+  constructor() {
+    // Vehicle type requirements for different categories (FR-4 enhancement)
+    this.categoryVehicleRequirements = {
+      'Waste Accumulation': ['Truck', 'Van'],
+      'Garbage Dump': ['Truck', 'Van'],
+      'Construction Debris': ['Truck', 'Heavy Equipment'],
+      'Sewer Overflow': ['Van', 'Car', 'Truck'],
+      'Dead Animal': ['Van', 'Car'],
+      'Pothole': ['Bike', 'Car', 'None'],
+      'Broken Streetlight': ['Bike', 'Car', 'None'],
+      'Water Logging': ['Car', 'Van', 'Truck'],
+      'Illegal Dumping': ['Truck', 'Van'],
+      'Stray Animals': ['Car', 'Van'],
+      'Graffiti': ['Bike', 'Car', 'None'],
+      'Public Toilet': ['Car', 'Van']
+    };
+  }
+
   /**
    * Suggest best inspector for a ticket
    * @param {Object} ticket - The ticket/report to assign
@@ -62,10 +80,24 @@ class AIAssignmentService {
       if (!inspector.isAvailable || inspector.status !== 'active') {
         return false;
       }
-      
+
+      // Check shift status (FR-4 enhancement)
+      if (inspector.shiftStatus !== undefined && !inspector.shiftStatus) {
+        return false;
+      }
+
+      // Check vehicle type requirements (FR-4 enhancement)
+      if (ticket.category && this.categoryVehicleRequirements[ticket.category]) {
+        const requiredVehicles = this.categoryVehicleRequirements[ticket.category];
+        const inspectorVehicle = inspector.vehicleType || 'None';
+        if (!requiredVehicles.includes(inspectorVehicle)) {
+          return false;
+        }
+      }
+
       // Check skills match
       if (ticket.category && inspector.skills) {
-        const hasSkill = inspector.skills.some(skill => 
+        const hasSkill = inspector.skills.some(skill =>
           skill.toLowerCase().includes(ticket.category.toLowerCase()) ||
           ticket.category.toLowerCase().includes(skill.toLowerCase())
         );
@@ -73,8 +105,8 @@ class AIAssignmentService {
           return false;
         }
       }
-      
-      // Check distance (if location available)
+
+      // Check distance (if location available) - strict 20km radius using Haversine
       if (ticket.location && inspector.currentLocation) {
         const distance = this.calculateDistance(
           ticket.location.coordinates,
@@ -85,12 +117,12 @@ class AIAssignmentService {
           return false;
         }
       }
-      
+
       // Check workload capacity
       if (inspector.activeTickets >= (inspector.maxCapacity || 10)) {
         return false;
       }
-      
+
       return true;
     });
   }

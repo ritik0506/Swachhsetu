@@ -5,6 +5,8 @@ import { MapContainer, TileLayer, Marker, useMapEvents, Circle, Popup, useMap } 
 import { toast } from 'react-toastify';
 import api, { reportAPI } from '../utils/api';
 import VoiceInput from '../components/VoiceInput';
+import SmartImageUpload from '../components/SmartImageUpload';
+import LocationVerifier from '../components/LocationVerifier';
 import 'leaflet/dist/leaflet.css';
 import './EnhancedReportIssue.css';
 
@@ -283,14 +285,16 @@ const EnhancedReportIssue = () => {
   });
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [verifiedImage, setVerifiedImage] = useState(null);
+  const [imageVerificationData, setImageVerificationData] = useState(null);
+  const [locationData, setLocationData] = useState(null);
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [forcingSubmit, setForcingSubmit] = useState(false);
   const [position, setPosition] = useState([28.6139, 77.2090]); // Default: New Delhi
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
   const [isGlobalAILoading, setGlobalAILoading] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(null);
-  const [dragActive, setDragActive] = useState(false);
-  const [validationErrors, setValidationErrors] = useState({});
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -342,53 +346,86 @@ const EnhancedReportIssue = () => {
     }
   };
 
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    addImages(files);
-  };
-
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
+  // Handler for SmartImageUpload
+  const handleImageVerify = (result) => {
+    if (result && !result.is_spam && !result.error) {
+      setImageVerificationData(result);
+      
+      // Auto-fill category and severity based on AI analysis
+      if (result.civic_category) {
+        const categoryMap = {
+          'waste': 'waste',
+          'garbage': 'waste',
+          'toilet': 'toilet',
+          'restroom': 'toilet',
+          'restaurant': 'restaurant',
+          'food': 'restaurant',
+          'water': 'water',
+          'pollution': 'beach',
+          'street': 'street',
+          'park': 'park'
+        };
+        
+        const detectedCategory = result.civic_category.toLowerCase();
+        const mappedCategory = Object.keys(categoryMap).find(key => 
+          detectedCategory.includes(key)
+        );
+        
+        if (mappedCategory) {
+          setFormData(prev => ({ ...prev, category: categoryMap[mappedCategory] }));
+        }
+      }
+      
+      // Set severity based on AI score
+      if (result.severity_score) {
+        let severity = 'medium';
+        if (result.severity_score >= 8) severity = 'critical';
+        else if (result.severity_score >= 6) severity = 'high';
+        else if (result.severity_score >= 4) severity = 'medium';
+        else severity = 'low';
+        
+        setFormData(prev => ({ ...prev, severity }));
+      }
+      
+      toast.success(`Image verified: ${result.civic_category || 'Civic Issue'}`);
+    } else if (result?.is_spam) {
+      toast.error('Image appears to be spam or inappropriate');
+    } else if (result?.error) {
+      toast.warning('Could not verify image, but you can still proceed');
     }
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    const files = Array.from(e.dataTransfer.files).filter(file => 
-      file.type.startsWith('image/')
-    );
-    addImages(files);
-  };
-
-  const addImages = (files) => {
-    if (files.length + images.length > 5) {
-      toast.error('Maximum 5 images allowed');
-      return;
-    }
-
-    setImages(prev => [...prev, ...files]);
-
-    // Create previews
-    files.forEach(file => {
+  const handleImageChange = (file) => {
+    if (file) {
+      setVerifiedImage(file);
+      setImages([file]);
+      
+      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreviews(prev => [...prev, reader.result]);
+        setImagePreviews([reader.result]);
       };
       reader.readAsDataURL(file);
-    });
+    }
   };
 
-  const removeImage = (index) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  // Handler for LocationVerifier
+  const handleLocationChange = (location) => {
+    if (location) {
+      setLocationData(location);
+      
+      // Update position for map
+      if (location.coordinates) {
+        setPosition([location.coordinates.latitude, location.coordinates.longitude]);
+      }
+      
+      // Update form data
+      setFormData(prev => ({
+        ...prev,
+        address: location.address || '',
+        landmark: location.landmark || ''
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -399,6 +436,11 @@ const EnhancedReportIssue = () => {
       return;
     }
 
+    // If there's a duplicate warning and user hasn't confirmed, show the warning
+    if (duplicateWarning && !forcingSubmit) {
+      return; // Warning modal will be shown
+    }
+
     try {
       setLoading(true);
 
@@ -407,17 +449,35 @@ const EnhancedReportIssue = () => {
       data.append('title', formData.title);
       data.append('description', formData.description);
       data.append('severity', formData.severity);
-      data.append('location', JSON.stringify({
-        coordinates: [position[1], position[0]], // [lng, lat] for GeoJSON
+      
+      // Use location data from LocationVerifier if available
+      const locationToSend = locationData ? {
+        coordinates: [locationData.coordinates.longitude, locationData.coordinates.latitude],
+        address: locationData.address,
+        landmark: locationData.landmark
+      } : {
+        coordinates: [position[1], position[0]],
         address: formData.address,
         landmark: formData.landmark
-      }));
+      };
+      
+      data.append('location', JSON.stringify(locationToSend));
 
-      images.forEach(image => {
-        data.append('images', image);
-      });
+      // Use verified image from SmartImageUpload
+      if (verifiedImage) {
+        data.append('images', verifiedImage);
+      } else {
+        images.forEach(image => {
+          data.append('images', image);
+        });
+      }
 
-      await reportAPI.createReport(data);
+      // Add force flag if bypassing duplicate check
+      if (forcingSubmit) {
+        data.append('force', 'true');
+      }
+
+      const response = await reportAPI.createReport(data);
       
       toast.success('Report submitted successfully! 🎉');
       
@@ -432,10 +492,22 @@ const EnhancedReportIssue = () => {
       });
       setImages([]);
       setImagePreviews([]);
+      setVerifiedImage(null);
+      setImageVerificationData(null);
+      setLocationData(null);
+      setDuplicateWarning(null);
+      setForcingSubmit(false);
       setStep(1);
     } catch (error) {
       console.error('Submit error:', error);
-      toast.error(error.response?.data?.message || 'Failed to submit report');
+      
+      // Check if it's a duplicate detection warning
+      if (error.response?.status === 409 && error.response?.data?.isDuplicate) {
+        setDuplicateWarning(error.response.data);
+        toast.warning('⚠️ Similar report found! Please review.');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to submit report');
+      }
     } finally {
       setLoading(false);
     }
@@ -875,233 +947,24 @@ const EnhancedReportIssue = () => {
                   <option value="high">High - Urgent issue</option>
                   <option value="critical">Critical - Health hazard</option>
                 </select>
+                {imageVerificationData && imageVerificationData.severity_score > 0 && (
+                  <small style={{ color: '#10b981', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                    ✓ AI detected severity: {imageVerificationData.severity_score}/10
+                  </small>
+                )}
               </div>
 
+              {/* SmartImageUpload Component */}
               <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <ImageIcon size={20} color="#10b981" />
-                  Upload Images (Max 5)
-                </label>
-                <div 
-                  className="image-upload-area"
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                  style={{
-                    border: dragActive ? '3px dashed #10b981' : '2px dashed #e5e7eb',
-                    backgroundColor: dragActive ? '#f0fdf4' : '#f9fafb',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageChange}
-                    style={{ display: 'none' }}
-                    id="image-upload"
-                  />
-                  <label htmlFor="image-upload" className="upload-label" style={{ cursor: 'pointer', padding: '40px', textAlign: 'center' }}>
-                    <Camera size={48} color="#10b981" style={{ marginBottom: '12px' }} />
-                    <div style={{ fontSize: '16px', fontWeight: '600', color: '#111827', marginBottom: '4px' }}>
-                      {dragActive ? 'Drop images here' : 'Click or drag images here'}
-                    </div>
-                    <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                      PNG, JPG, JPEG (Max 5 images, 5MB each)
-                    </div>
-                  </label>
-                </div>
-                {imagePreviews.length > 0 && (
-                  <div style={{ marginTop: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>
-                        {imagePreviews.length} / 5 images uploaded
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImages([]);
-                          setImagePreviews([]);
-                          toast.info('All images removed');
-                        }}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: '#ef4444',
-                          fontSize: '14px',
-                          cursor: 'pointer',
-                          textDecoration: 'underline'
-                        }}
-                      >
-                        Remove all
-                      </button>
-                    </div>
-                    <div className="image-previews" style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', 
-                      gap: '12px' 
-                    }}>
-                      {imagePreviews.map((preview, index) => (
-                        <div 
-                          key={index} 
-                          className="image-preview"
-                          style={{
-                            position: 'relative',
-                            borderRadius: '8px',
-                            overflow: 'hidden',
-                            aspectRatio: '1',
-                            cursor: 'pointer',
-                            border: '2px solid #e5e7eb',
-                            transition: 'all 0.3s ease'
-                          }}
-                          onClick={() => setSelectedImageIndex(index)}
-                          onMouseEnter={(e) => e.currentTarget.style.borderColor = '#10b981'}
-                          onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
-                        >
-                          <img 
-                            src={preview} 
-                            alt={`Preview ${index + 1}`}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover'
-                            }}
-                          />
-                          <button
-                            type="button"
-                            className="remove-image"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeImage(index);
-                            }}
-                            style={{
-                              position: 'absolute',
-                              top: '4px',
-                              right: '4px',
-                              backgroundColor: 'rgba(239, 68, 68, 0.9)',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '50%',
-                              width: '28px',
-                              height: '28px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer',
-                              fontSize: '18px',
-                              fontWeight: 'bold',
-                              transition: 'all 0.3s ease'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#dc2626';
-                              e.currentTarget.style.transform = 'scale(1.1)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.9)';
-                              e.currentTarget.style.transform = 'scale(1)';
-                            }}
-                          >
-                            ×
-                          </button>
-                          <div style={{
-                            position: 'absolute',
-                            bottom: '4px',
-                            right: '4px',
-                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                            color: 'white',
-                            padding: '2px 8px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            fontWeight: '600'
-                          }}>
-                            {index + 1}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <SmartImageUpload
+                  onVerify={handleImageVerify}
+                  onChange={handleImageChange}
+                  maxWidth={1024}
+                  maxSizeMB={10}
+                  isGlobalAILoading={isGlobalAILoading}
+                  setGlobalAILoading={setGlobalAILoading}
+                />
               </div>
-
-              {/* Image Preview Modal */}
-              <AnimatePresence>
-                {selectedImageIndex !== null && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    style={{
-                      position: 'fixed',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                      zIndex: 9999,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '20px'
-                    }}
-                    onClick={() => setSelectedImageIndex(null)}
-                  >
-                    <motion.div
-                      initial={{ scale: 0.8 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0.8 }}
-                      style={{
-                        position: 'relative',
-                        maxWidth: '90%',
-                        maxHeight: '90%'
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <img
-                        src={imagePreviews[selectedImageIndex]}
-                        alt={`Full view ${selectedImageIndex + 1}`}
-                        style={{
-                          maxWidth: '100%',
-                          maxHeight: '90vh',
-                          borderRadius: '12px'
-                        }}
-                      />
-                      <button
-                        onClick={() => setSelectedImageIndex(null)}
-                        style={{
-                          position: 'absolute',
-                          top: '-40px',
-                          right: '0',
-                          backgroundColor: 'white',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: '36px',
-                          height: '36px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          fontSize: '24px'
-                        }}
-                      >
-                        ×
-                      </button>
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '-40px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        color: 'white',
-                        fontSize: '16px',
-                        fontWeight: '600'
-                      }}>
-                        {selectedImageIndex + 1} / {imagePreviews.length}
-                      </div>
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
               <div className="button-group">
                 <button 
@@ -1129,99 +992,13 @@ const EnhancedReportIssue = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
             >
+              {/* LocationVerifier Component */}
               <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <MapPin size={20} color="#10b981" />
-                  <span style={{ fontSize: '18px', fontWeight: '600' }}>Pinpoint Exact Location</span>
-                </label>
-                
-                <div style={{
-                  backgroundColor: '#f0fdf4',
-                  border: '1px solid #10b981',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <AlertCircle size={20} color="#10b981" />
-                  <div style={{ fontSize: '14px', color: '#047857' }}>
-                    <strong>Tip:</strong> Use search to find location, click on map to mark exact spot, or use your current location
-                  </div>
-                </div>
-
-                <div style={{
-                  position: 'relative',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  marginBottom: '16px'
-                }}>
-                  <MapContainer
-                    center={position}
-                    zoom={15}
-                    style={{ height: '450px', width: '100%' }}
-                    zoomControl={false}
-                  >
-                    <TileLayer
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      attribution='&copy; OpenStreetMap'
-                    />
-                    <MapController position={position} setPosition={setPosition} />
-                  </MapContainer>
-                </div>
-
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '8px',
-                  padding: '12px',
-                  backgroundColor: '#f9fafb',
-                  borderRadius: '8px',
-                  fontSize: '13px'
-                }}>
-                  <div>
-                    <strong style={{ color: '#6b7280' }}>Latitude:</strong>
-                    <div style={{ color: '#111827', fontFamily: 'monospace' }}>{position[0].toFixed(6)}</div>
-                  </div>
-                  <div>
-                    <strong style={{ color: '#6b7280' }}>Longitude:</strong>
-                    <div style={{ color: '#111827', fontFamily: 'monospace' }}>{position[1].toFixed(6)}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Full Address *</label>
-                <textarea
-                  name="address"
-                  className="form-textarea"
-                  placeholder="Enter complete address with building/house number, street, area, city, pincode"
-                  value={formData.address}
-                  onChange={handleChange}
-                  required
-                  rows="3"
-                  style={{
-                    resize: 'vertical',
-                    minHeight: '80px'
-                  }}
+                <LocationVerifier
+                  onChange={handleLocationChange}
+                  isGlobalAILoading={isGlobalAILoading}
+                  setGlobalAILoading={setGlobalAILoading}
                 />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Nearby Landmark (Optional)</label>
-                <input
-                  type="text"
-                  name="landmark"
-                  className="form-input"
-                  placeholder="e.g., Near Central Park, Opposite City Mall, Behind Police Station"
-                  value={formData.landmark}
-                  onChange={handleChange}
-                />
-                <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-                  Help us locate faster by mentioning a well-known landmark
-                </small>
               </div>
 
               <div className="button-group">
@@ -1273,6 +1050,192 @@ const EnhancedReportIssue = () => {
           )}
         </form>
       </motion.div>
+
+      {/* Duplicate Warning Modal */}
+      {duplicateWarning && (
+        <div 
+          className="modal-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '20px'
+          }}
+        >
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="modal-content"
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '32px',
+              maxWidth: '550px',
+              width: '100%',
+              position: 'relative',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)'
+            }}
+          >
+            <div style={{
+              width: '64px',
+              height: '64px',
+              margin: '0 auto 20px',
+              borderRadius: '50%',
+              backgroundColor: '#fef3c7',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <AlertCircle size={32} color="#f59e0b" />
+            </div>
+
+            <h3 style={{ 
+              marginTop: 0, 
+              marginBottom: '16px',
+              fontSize: '24px',
+              fontWeight: '700',
+              color: '#111827',
+              textAlign: 'center'
+            }}>
+              Similar Report Detected
+            </h3>
+
+            <p style={{
+              fontSize: '15px',
+              color: '#6b7280',
+              lineHeight: '1.6',
+              textAlign: 'center',
+              marginBottom: '20px'
+            }}>
+              Our AI detected a similar report in this location. Submitting duplicates may slow down response times.
+            </p>
+
+            <div style={{
+              backgroundColor: '#fef3c7',
+              border: '1px solid #fbbf24',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '24px'
+            }}>
+              <div style={{ 
+                fontSize: '13px', 
+                color: '#92400e',
+                marginBottom: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <strong>Confidence:</strong>
+                <div style={{
+                  flex: 1,
+                  height: '8px',
+                  backgroundColor: '#fde68a',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${duplicateWarning.confidence * 100}%`,
+                    height: '100%',
+                    backgroundColor: '#f59e0b',
+                    transition: 'width 0.5s ease'
+                  }} />
+                </div>
+                <span style={{ fontWeight: '600' }}>
+                  {(duplicateWarning.confidence * 100).toFixed(0)}%
+                </span>
+              </div>
+              <p style={{ 
+                fontSize: '13px', 
+                color: '#92400e',
+                margin: '8px 0 0 0',
+                fontStyle: 'italic'
+              }}>
+                {duplicateWarning.rationale}
+              </p>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              marginTop: '24px'
+            }}>
+              <button
+                onClick={() => {
+                  setDuplicateWarning(null);
+                  setForcingSubmit(false);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: '#6b7280',
+                  backgroundColor: 'white',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f3f4f6';
+                  e.currentTarget.style.borderColor = '#9ca3af';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'white';
+                  e.currentTarget.style.borderColor = '#e5e7eb';
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setForcingSubmit(true);
+                  setDuplicateWarning(null);
+                  // Automatically resubmit
+                  setTimeout(() => {
+                    const form = document.querySelector('form');
+                    if (form) {
+                      const event = new Event('submit', { bubbles: true, cancelable: true });
+                      form.dispatchEvent(event);
+                    }
+                  }, 100);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: 'white',
+                  backgroundColor: '#f59e0b',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#d97706';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f59e0b';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                Submit Anyway
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Voice Input Modal */}
       {showVoiceModal && (

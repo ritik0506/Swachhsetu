@@ -104,7 +104,7 @@ const SmartImageUpload = ({
       formData.append('image', file);
 
       // Call forensic analysis API
-      const response = await api.post('/api/ai/forensic/analyze', formData, {
+      const response = await api.post('/ai/forensic/analyze', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -136,8 +136,12 @@ const SmartImageUpload = ({
       const errorMessage = err.response?.data?.error || 'Failed to verify image. Please try again.';
       setError(errorMessage);
       
+      // Clear the file on error so user can try again
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      
       if (onVerify) {
-        onVerify({ is_spam: false, error: errorMessage });
+        onVerify({ is_spam: null, error: errorMessage }); // Don't set is_spam to false on error
       }
     } finally {
       setIsVerifying(false);

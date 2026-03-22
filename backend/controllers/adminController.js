@@ -1,6 +1,59 @@
 const Report = require('../models/Report');
 const User = require('../models/User');
 const Gamification = require('../models/Gamification');
+const Notification = require('../models/Notification');
+
+// Helper function to award points (shared with reportController for consistency)
+const awardPoints = async (userId, points, action) => {
+  try {
+    let gamification = await Gamification.findOne({ userId });
+
+    if (!gamification) {
+      gamification = await Gamification.create({
+        userId,
+        totalPoints: 0,
+        stats: {}
+      });
+    }
+
+    gamification.totalPoints += points;
+
+    if (!gamification.stats) {
+      gamification.stats = {};
+    }
+    gamification.stats[action] = (gamification.stats[action] || 0) + 1;
+
+    // Update level (cap at 100 per FR-7 specification)
+    gamification.level.xp += points;
+    while (gamification.level.xp >= gamification.level.nextLevelXp && gamification.level.current < 100) {
+      gamification.level.current += 1;
+      gamification.level.xp -= gamification.level.nextLevelXp;
+      gamification.level.nextLevelXp = Math.floor(gamification.level.nextLevelXp * 1.5);
+
+      try {
+        await Notification.create({
+          userId,
+          type: 'level_up',
+          title: '🎉 Level Up!',
+          message: `Congratulations! You've reached level ${gamification.level.current}`,
+          priority: 'high'
+        });
+      } catch (notifError) {
+        console.warn('Failed to create level up notification:', notifError.message);
+      }
+    }
+
+    // If at max level (100), keep accumulating XP but don't level up
+    if (gamification.level.current >= 100) {
+      gamification.level.current = 100;
+    }
+
+    await gamification.save();
+  } catch (error) {
+    console.error('Award points error:', error);
+    throw error;
+  }
+};
 
 // @desc    Get all reports for admin management
 // @route   GET /api/admin/reports
@@ -87,6 +140,13 @@ exports.updateReport = async (req, res) => {
     if (status === 'resolved' && oldStatus !== 'resolved') {
       report.resolvedAt = new Date();
       report.verifiedBy = req.user.id;
+
+      // Award points to report creator (50 points per FR-7 specification)
+      try {
+        await awardPoints(report.userId, 50, 'reportsVerified');
+      } catch (gamificationError) {
+        console.warn('Failed to award points:', gamificationError.message);
+      }
     }
 
     await report.save();
