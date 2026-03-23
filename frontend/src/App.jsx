@@ -79,21 +79,21 @@ const App = () => {
               <Route path="/garbage-schedule" element={<GarbageSchedule />} />
               <Route path="/health-guide" element={<HealthGuide />} />
               {/* Alias routes for backward compatibility */}
-              <Route 
-                path="/report" 
+              <Route
+                path="/report"
                 element={
                   <ProtectedRoute>
                     <EnhancedReportIssue />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="/waste-report" 
+              <Route
+                path="/waste-report"
                 element={
                   <ProtectedRoute>
-                    <Profile />
+                    <EnhancedReportIssue />
                   </ProtectedRoute>
-                } 
+                }
               />
             </Routes>
           </main>

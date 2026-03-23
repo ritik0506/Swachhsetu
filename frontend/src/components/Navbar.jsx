@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { 
-  Shield, 
-  LogOut, 
-  Home, 
-  LayoutDashboard, 
-  BarChart3, 
-  AlertCircle, 
-  FileText, 
+import {
+  Shield,
+  LogOut,
+  Home,
+  LayoutDashboard,
+  BarChart3,
+  AlertCircle,
+  FileText,
   MapPin,
   Sparkles,
   User,
   ChevronDown,
-  Trophy
+  Trophy,
+  Calendar
 } from "lucide-react";
 import "../styles/Navbar.css";
 
@@ -90,18 +91,18 @@ const Navbar = () => {
           
           {/* Services Dropdown */}
           <li className="dropdown" onMouseEnter={() => setServicesOpen(true)} onMouseLeave={() => setServicesOpen(false)}>
-            <div className={`dropdown-trigger ${['/waste-report', '/toilets', '/restaurant', '/garbage', '/health'].some(path => isActive(path)) ? 'active' : ''}`}>
+            <div className={`dropdown-trigger ${['/garbage-schedule', '/toilets', '/restaurant', '/health-guide'].some(path => isActive(path)) ? 'active' : ''}`}>
               <Sparkles size={18} />
               <span>Services</span>
               <ChevronDown size={16} className={`chevron ${servicesOpen ? 'open' : ''}`} />
             </div>
             <ul className={`dropdown-menu ${servicesOpen ? 'show' : ''}`}>
               <li>
-                <Link to="/waste-report" onClick={() => { setMenuOpen(false); setServicesOpen(false); }}>
-                  <FileText size={16} />
+                <Link to="/garbage-schedule" onClick={() => { setMenuOpen(false); setServicesOpen(false); }}>
+                  <Calendar size={16} />
                   <div>
-                    <span className="menu-title">Waste Reports</span>
-                    <span className="menu-desc">View waste dump locations</span>
+                    <span className="menu-title">Garbage Schedule</span>
+                    <span className="menu-desc">Collection schedules</span>
                   </div>
                 </Link>
               </li>
@@ -165,20 +166,20 @@ const Navbar = () => {
               )}
             </>
           )}
-          
+
           <li className="mobile-only">
-            <Link 
-              to="/waste-report" 
-              className={isActive('/waste-report') ? 'active' : ''}
+            <Link
+              to="/garbage-schedule"
+              className={isActive('/garbage-schedule') ? 'active' : ''}
               onClick={() => setMenuOpen(false)}
             >
-              <FileText size={18} />
-              <span>Waste Report</span>
+              <Calendar size={18} />
+              <span>Garbage Schedule</span>
             </Link>
           </li>
           <li className="mobile-only">
-            <Link 
-              to="/toilets" 
+            <Link
+              to="/toilets"
               className={isActive('/toilets') ? 'active' : ''}
               onClick={() => setMenuOpen(false)}
             >

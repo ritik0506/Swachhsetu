@@ -482,6 +482,18 @@ exports.bulkUpdateReports = async (req, res) => {
       { $set: updateData }
     );
 
+    // Award points for bulk resolutions (50 points per FR-7 specification)
+    if (status === 'resolved') {
+      try {
+        const resolvedReports = await Report.find({ _id: { $in: reportIds } }).select('userId');
+        for (const report of resolvedReports) {
+          await awardPoints(report.userId, 50, 'reportsVerified');
+        }
+      } catch (gamificationError) {
+        console.warn('Failed to award points for bulk resolution:', gamificationError.message);
+      }
+    }
+
     res.json({
       success: true,
       message: `${result.modifiedCount} reports updated successfully`,

@@ -27,6 +27,58 @@
   opacity: 0.9;
 }
 
+/* Demo Banner */
+.demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #1e293b;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  animation: fadeInDown 0.6s ease;
+}
+
+.demo-banner svg {
+  flex-shrink: 0;
+}
+
+/* Sample Data Intro */
+.sample-data-intro {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.sample-data-intro h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.sample-data-intro p {
+  opacity: 0.9;
+  font-size: 1rem;
+}
+
+/* Today Section Header */
+.today-section h2 {
+  color: white;
+  text-align: center;
+  font-size: 1.75rem;
+  margin-bottom: 1.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
 .tabs {
   display: flex;
   gap: 1rem;
@@ -149,8 +201,10 @@
   background: white;
   border-radius: 15px;
   padding: 1.5rem;
+  padding-top: 1.75rem;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .schedule-card:hover {
@@ -166,18 +220,25 @@
   gap: 1rem;
 }
 
+.schedule-title-section {
+  flex: 1;
+  min-width: 0;
+}
+
 .schedule-title-section h3 {
-  font-size: 1.4rem;
-  color: #333;
+  font-size: 1.3rem;
+  color: #212529;
   margin-bottom: 0.5rem;
+  word-break: break-word;
 }
 
 .schedule-location {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  color: #666;
+  color: #6c757d;
   font-size: 0.9rem;
+  flex-wrap: wrap;
 }
 
 .subscribe-btn {
@@ -243,21 +304,24 @@
   gap: 0.5rem;
   font-size: 0.9rem;
   background: rgba(255, 255, 255, 0.2);
-  padding: 0.5rem;
-  border-radius: 5px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  flex-wrap: wrap;
 }
 
 .waste-type-badge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.25rem 0.75rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 50px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: white;
   text-transform: capitalize;
   margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .route-info {
@@ -267,27 +331,35 @@
   background: #f8f9fa;
   border-radius: 10px;
   margin-bottom: 1rem;
+  align-items: flex-start;
 }
 
 .route-details {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .route-details strong {
   color: #667eea;
   font-size: 1rem;
+  word-break: break-word;
 }
 
 .route-details span {
   font-size: 0.85rem;
-  color: #666;
+  color: #495057;
 }
 
 .duration {
-  color: #28a745;
+  color: #155724;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
 }
 
 .vehicle-info, .contact-info {
@@ -304,29 +376,31 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem;
+  padding: 0.5rem 0.75rem;
   background: #f8f9fa;
-  border-radius: 5px;
+  border-radius: 8px;
   margin-bottom: 0.5rem;
   font-size: 0.85rem;
+  flex-wrap: wrap;
 }
 
 .vehicle-status {
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0.6rem;
   border-radius: 50px;
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .vehicle-status.active {
   background: #d4edda;
-  color: #28a745;
+  color: #155724;
 }
 
 .vehicle-status.inactive {
   background: #f8d7da;
-  color: #dc3545;
+  color: #721c24;
 }
 
 .vehicle-status.maintenance {
@@ -336,7 +410,10 @@
 
 .driver-name {
   margin-left: auto;
-  color: #666;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
 .contact-info p {
@@ -368,6 +445,7 @@
   background: #f8f9fa;
   border-radius: 10px;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
 .stat-item {
@@ -376,10 +454,11 @@
   gap: 0.3rem;
   font-size: 0.85rem;
   color: #28a745;
+  white-space: nowrap;
 }
 
 .stat-item.delay {
-  color: #ffc107;
+  color: #856404;
 }
 
 .view-details-btn {
@@ -570,9 +649,492 @@
   }
 }
 
+/* Weather Widget */
+.weather-widget {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+  display: inline-flex;
+}
+
+.weather-icon {
+  font-size: 1.5rem;
+}
+
+.weather-temp {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.weather-advisory {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* Search Meta Section */
+.search-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+}
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f8f9fa;
+  border: 2px solid #e0e0e0;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-toggle:hover {
+  background: #e0e0e0;
+  border-color: #667eea;
+}
+
+/* Filters Panel */
+.filters-panel {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  flex-wrap: wrap;
+  animation: fadeInDown 0.3s ease;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #666;
+}
+
+.filter-group select {
+  padding: 0.5rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* View Toggle */
+.view-toggle {
+  display: flex;
+  gap: 0.25rem;
+  background: #e0e0e0;
+  border-radius: 8px;
+  padding: 0.25rem;
+  margin-left: auto;
+}
+
+.view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.view-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.view-btn.active {
+  background: white;
+  color: #667eea;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Schedule Card Enhancements */
+.schedule-card {
+  position: relative;
+  overflow: visible;
+}
+
+.schedule-card.list-view {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.schedules-grid.list {
+  grid-template-columns: 1fr;
+}
+
+/* Card Ribbon - Simple badge style */
+.card-ribbon {
+  position: absolute;
+  top: -8px;
+  right: 15px;
+  z-index: 10;
+}
+
+.ribbon-tag {
+  display: inline-block;
+  padding: 0.4rem 0.75rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  text-transform: uppercase;
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.ribbon-tag.today {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  box-shadow: 0 3px 10px rgba(240, 147, 251, 0.4);
+}
+
+.schedule-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #e0e0e0;
+  border-radius: 50%;
+  background: white;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+  transform: scale(1.1);
+}
+
+.action-btn.active {
+  background: #fff8e1;
+  border-color: #ffc107;
+  color: #ffc107;
+}
+
+.action-btn.subscribed {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+.schedule-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.rating-count {
+  color: #999;
+  font-size: 0.8rem;
+}
+
+/* Card Footer */
+.card-footer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px solid #f0f0f0;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.icon-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+  background: #f8f9fa;
+}
+
+/* Phone Link */
+.phone-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.phone-link:hover {
+  color: #764ba2;
+}
+
+/* Waste Tips Section */
+.waste-tips {
+  background: white;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: fadeInUp 0.5s ease;
+}
+
+.tips-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tips-header:hover {
+  background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+}
+
+.tips-header h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tips-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 200px;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.tip-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.tip-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.tip-item strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.tip-item p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Favorites Section */
+.favorites-section {
+  animation: fadeInUp 0.5s ease;
+}
+
+.favorites-section h2 {
+  color: white;
+  text-align: center;
+  font-size: 1.75rem;
+  margin-bottom: 1.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Today Section Enhancements */
+.today-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.today-header h2 {
+  color: white;
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.today-date {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+}
+
+.today-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 50px;
+  text-transform: uppercase;
+}
+
+.day-schedule.today {
+  border: 2px solid #f093fb;
+  box-shadow: 0 0 15px rgba(240, 147, 251, 0.3);
+}
+
+/* Modal Enhancements */
+.modal-subtitle {
+  color: #666;
+  font-size: 0.95rem;
+  margin-top: 0.25rem;
+}
+
+.modal-body {
+  animation: fadeIn 0.3s ease;
+}
+
+.last-updated {
+  text-align: center;
+  color: #999;
+  font-size: 0.85rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Coverage Info */
+.coverage-info {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+.coverage-info h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.coverage-stats {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.coverage-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 100px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+
+.coverage-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.coverage-label {
+  font-size: 0.8rem;
+  opacity: 0.9;
+  margin-top: 0.25rem;
+}
+
+/* Spin Animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Responsive Styles */
 @media (max-width: 768px) {
   .garbage-header h1 {
-    font-size: 2rem;
+    font-size: 1.8rem;
   }
 
   .search-form {
@@ -585,6 +1147,11 @@
 
   .schedule-header {
     flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .schedule-title-section h3 {
+    font-size: 1.2rem;
   }
 
   .subscribe-btn {
@@ -598,5 +1165,112 @@
 
   .statistics {
     flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .stat-item {
+    white-space: normal;
+  }
+
+  .weather-widget {
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .search-meta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .filter-toggle {
+    justify-content: center;
+  }
+
+  .filters-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-group select {
+    width: 100%;
+  }
+
+  .view-toggle {
+    margin: 0 auto;
+  }
+
+  .tips-content {
+    flex-direction: column;
+  }
+
+  .tip-item {
+    min-width: auto;
+  }
+
+  .coverage-stats {
+    flex-direction: column;
+  }
+
+  .card-footer {
+    flex-direction: column;
+  }
+
+  .footer-actions {
+    margin: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .view-details-btn {
+    width: 100%;
+  }
+
+  .card-ribbon {
+    top: -6px;
+    right: 10px;
+  }
+
+  .ribbon-tag {
+    font-size: 0.65rem;
+    padding: 0.3rem 0.6rem;
+  }
+
+  .schedule-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .slot-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .waste-type-badge {
+    margin-left: 0;
+  }
+
+  .vehicle-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .driver-name {
+    margin-left: 0;
+  }
+
+  .next-collection {
+    padding: 0.75rem;
+  }
+
+  .next-date {
+    font-size: 1rem;
   }
 }
