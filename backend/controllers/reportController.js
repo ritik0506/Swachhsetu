@@ -6,61 +6,8 @@ const { aiQueue } = require('../queues/aiQueue');
 const FollowUp = require('../models/FollowUp');
 const aiFollowupService = require('../services/aiFollowupService');
 const deduplicationService = require('../services/deduplicationService');
-
-// Helper function to award points and check achievements
-const awardPoints = async (userId, points, action) => {
-  try {
-    let gamification = await Gamification.findOne({ userId });
-    
-    // Create gamification profile if it doesn't exist
-    if (!gamification) {
-      gamification = await Gamification.create({
-        userId,
-        totalPoints: 0,
-        stats: {}
-      });
-    }
-    
-    gamification.totalPoints += points;
-    
-    // Initialize stats object if it doesn't exist
-    if (!gamification.stats) {
-      gamification.stats = {};
-    }
-    gamification.stats[action] = (gamification.stats[action] || 0) + 1;
-    
-    // Update level (cap at 100 per FR-7 specification)
-    gamification.level.xp += points;
-    while (gamification.level.xp >= gamification.level.nextLevelXp && gamification.level.current < 100) {
-      gamification.level.current += 1;
-      gamification.level.xp -= gamification.level.nextLevelXp;
-      gamification.level.nextLevelXp = Math.floor(gamification.level.nextLevelXp * 1.5);
-
-      // Create level up notification
-      try {
-        await Notification.create({
-          userId,
-          type: 'level_up',
-          title: '🎉 Level Up!',
-          message: `Congratulations! You've reached level ${gamification.level.current}`,
-          priority: 'high'
-        });
-      } catch (notifError) {
-        console.warn('Failed to create level up notification:', notifError.message);
-      }
-    }
-
-    // If at max level (100), keep accumulating XP but don't level up
-    if (gamification.level.current >= 100) {
-      gamification.level.current = 100;
-    }
-    
-    await gamification.save();
-  } catch (error) {
-    console.error('Award points error:', error);
-    throw error;
-  }
-};
+const { awardPoints } = require('../utils/gamification');
+const logger = require('../utils/logger');
 
 // @desc    Create new report
 // @route   POST /api/reports
@@ -68,13 +15,20 @@ const awardPoints = async (userId, points, action) => {
 exports.createReport = async (req, res) => {
   try {
     const { category, title, description, severity } = req.body;
-    
-    // Parse location if it's a string
+
+    // Parse location if it's a string (with error handling)
     let locationData;
-    if (typeof req.body.location === 'string') {
-      locationData = JSON.parse(req.body.location);
-    } else {
-      locationData = req.body.location;
+    try {
+      if (typeof req.body.location === 'string') {
+        locationData = JSON.parse(req.body.location);
+      } else {
+        locationData = req.body.location;
+      }
+    } catch (parseError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid location format'
+      });
     }
 
     // Validate required fields
@@ -116,7 +70,7 @@ exports.createReport = async (req, res) => {
           });
         }
       } catch (dupError) {
-        console.warn('Duplicate detection failed:', dupError.message);
+        logger.warn('Duplicate detection failed:', dupError.message);
         // Continue with report creation if duplicate check fails
       }
     }
@@ -143,7 +97,7 @@ exports.createReport = async (req, res) => {
     try {
       await awardPoints(req.user.id, 10, 'reportsSubmitted');
     } catch (gamificationError) {
-      console.warn('Failed to award points:', gamificationError.message);
+      logger.warn('Failed to award points:', gamificationError.message);
     }
 
     // Update user stats
@@ -158,7 +112,7 @@ exports.createReport = async (req, res) => {
         io.emit('newReport', report);
       }
     } catch (socketError) {
-      console.warn('Failed to emit socket event:', socketError.message);
+      logger.warn('Failed to emit socket event:', socketError.message);
     }
 
     // Queue AI triage (async - don't wait)
@@ -174,10 +128,10 @@ exports.createReport = async (req, res) => {
             severity: report.severity
           }
         });
-        console.log(`AI triage queued for report ${report._id}`);
+        logger.debug(`AI triage queued for report ${report._id}`);
       }
     } catch (aiError) {
-      console.warn('Failed to queue AI triage:', aiError.message);
+      logger.warn('Failed to queue AI triage:', aiError.message);
       // Don't fail the request if AI queueing fails
     }
 
@@ -186,11 +140,10 @@ exports.createReport = async (req, res) => {
       report
     });
   } catch (error) {
-    console.error('Create report error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to create report', 
-      error: error.message 
+    logger.error('Create report error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create report'
     });
   }
 };
@@ -247,11 +200,10 @@ exports.getReports = async (req, res) => {
       totalReports: count
     });
   } catch (error) {
-    console.error('Get reports error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch reports', 
-      error: error.message 
+    logger.error('Get reports error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch reports'
     });
   }
 };
@@ -281,11 +233,10 @@ exports.getReport = async (req, res) => {
       report
     });
   } catch (error) {
-    console.error('Get report error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch report', 
-      error: error.message 
+    logger.error('Get report error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch report'
     });
   }
 };
@@ -334,10 +285,10 @@ exports.updateReportStatus = async (req, res) => {
           }, {
             delay: 48 * 60 * 60 * 1000 // Delay 48 hours
           });
-          console.log(`Follow-up scheduled for report ${report._id}`);
+          logger.debug(`Follow-up scheduled for report ${report._id}`);
         }
       } catch (followupError) {
-        console.warn('Failed to schedule follow-up:', followupError.message);
+        logger.warn('Failed to schedule follow-up:', followupError.message);
       }
     }
 
@@ -360,11 +311,10 @@ exports.updateReportStatus = async (req, res) => {
       report
     });
   } catch (error) {
-    console.error('Update status error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update report status', 
-      error: error.message 
+    logger.error('Update status error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update report status'
     });
   }
 };
@@ -407,11 +357,10 @@ exports.upvoteReport = async (req, res) => {
       downvotes: report.downvotes.length
     });
   } catch (error) {
-    console.error('Upvote error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to upvote report', 
-      error: error.message 
+    logger.error('Upvote error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upvote report'
     });
   }
 };
@@ -448,11 +397,10 @@ exports.addComment = async (req, res) => {
       comments: report.comments
     });
   } catch (error) {
-    console.error('Add comment error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to add comment', 
-      error: error.message 
+    logger.error('Add comment error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add comment'
     });
   }
 };
@@ -470,11 +418,10 @@ exports.getMyReports = async (req, res) => {
       reports
     });
   } catch (error) {
-    console.error('Get my reports error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch reports', 
-      error: error.message 
+    logger.error('Get my reports error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch reports'
     });
   }
 };

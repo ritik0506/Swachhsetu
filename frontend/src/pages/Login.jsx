@@ -14,6 +14,9 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  // Show test accounts only in development
+  const showTestAccounts = import.meta.env.DEV || import.meta.env.VITE_SHOW_TEST_ACCOUNTS === 'true';
+
   const testAccounts = [
     {
       role: "Admin",
@@ -70,72 +73,82 @@ const Login = () => {
         <h2 className="login-title">Sign in to Your Account</h2>
         <p className="login-subtitle">Access your personalized dashboard</p>
 
-        {/* Test Accounts Section */}
-        <div className="test-accounts-section">
-          <p className="test-accounts-title">Quick Login (Test Accounts)</p>
-          <div className="test-accounts-grid">
-            {testAccounts.map((account) => {
-              const Icon = account.icon;
-              return (
-                <div
-                  key={account.role}
-                  className="test-account-card"
-                  onClick={() => account.email !== "Register new account" && quickLogin(account.email, account.password)}
-                  style={{ 
-                    borderColor: account.color,
-                    cursor: account.email !== "Register new account" ? "pointer" : "default"
-                  }}
-                >
-                  <Icon size={24} color={account.color} />
-                  <div className="test-account-info">
-                    <h4 style={{ color: account.color }}>{account.role}</h4>
-                    <p>{account.description}</p>
-                    {account.email !== "Register new account" && (
-                      <span className="test-account-hint">Click to auto-fill</span>
-                    )}
+        {/* Test Accounts Section - Only in Development */}
+        {showTestAccounts && (
+          <div className="test-accounts-section">
+            <p className="test-accounts-title">Quick Login (Test Accounts)</p>
+            <div className="test-accounts-grid">
+              {testAccounts.map((account) => {
+                const Icon = account.icon;
+                return (
+                  <div
+                    key={account.role}
+                    className="test-account-card"
+                    onClick={() => account.email !== "Register new account" && quickLogin(account.email, account.password)}
+                    style={{
+                      borderColor: account.color,
+                      cursor: account.email !== "Register new account" ? "pointer" : "default"
+                    }}
+                  >
+                    <Icon size={24} color={account.color} />
+                    <div className="test-account-info">
+                      <h4 style={{ color: account.color }}>{account.role}</h4>
+                      <p>{account.description}</p>
+                      {account.email !== "Register new account" && (
+                        <span className="test-account-hint">Click to auto-fill</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="divider">
           <span>Or enter credentials</span>
         </div>
 
-        <form onSubmit={handleLogin} className="login-form">
+        <form onSubmit={handleLogin} className="login-form" aria-label="Login form">
           <div className="form-group">
-            <label>Email Address</label>
+            <label htmlFor="email">Email Address</label>
             <input
+              id="email"
               type="email"
               placeholder="example@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
+              aria-required="true"
+              aria-invalid={error ? "true" : "false"}
             />
           </div>
 
           <div className="form-group">
-            <label>Password</label>
+            <label htmlFor="password">Password</label>
             <div className="password-wrapper">
               <input
+                id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
+                aria-required="true"
+                aria-invalid={error ? "true" : "false"}
               />
-              <span
+              <button
+                type="button"
                 className="toggle-password"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </span>
+                {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+              </button>
             </div>
           </div>
 
-          {error && <p className="error-text">{error}</p>}
+          {error && <p className="error-text" role="alert">{error}</p>}
 
           <button className="login-btn" type="submit" disabled={loading}>
             {loading ? (

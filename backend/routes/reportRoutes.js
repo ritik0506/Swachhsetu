@@ -11,13 +11,14 @@ const {
 } = require('../controllers/reportController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
+const { reportValidators } = require('../middleware/validators');
 
-router.post('/', protect, upload.array('images', 5), createReport);
-router.get('/', getReports);
+router.post('/', protect, upload.array('images', 5), reportValidators.create, createReport);
+router.get('/', reportValidators.list, getReports);
 router.get('/my-reports', protect, getMyReports);
-router.get('/:id', getReport);
-router.put('/:id/status', protect, authorize('admin', 'moderator'), updateReportStatus);
-router.post('/:id/upvote', protect, upvoteReport);
-router.post('/:id/comment', protect, addComment);
+router.get('/:id', reportValidators.getById, getReport);
+router.put('/:id/status', protect, authorize('admin', 'moderator'), reportValidators.updateStatus, updateReportStatus);
+router.post('/:id/upvote', protect, reportValidators.getById, upvoteReport);
+router.post('/:id/comment', protect, reportValidators.addComment, addComment);
 
 module.exports = router;

@@ -16,14 +16,16 @@ const AIProcessingLog = require('../models/AIProcessingLog');
 const Report = require('../models/Report');
 const FollowUp = require('../models/FollowUp');
 const { protect } = require('../middleware/authMiddleware');
+const { aiValidators } = require('../middleware/validators');
 const multer = require('multer');
 const path = require('path');
-const { 
-  sanitizeTranscript, 
-  sanitizeChatMessage, 
+const logger = require('../utils/logger');
+const {
+  sanitizeTranscript,
+  sanitizeChatMessage,
   sanitizeImageData,
   sanitizeAIOutput,
-  validateFileUpload 
+  validateFileUpload
 } = require('../utils/sanitizer');
 
 // Multer configuration for image uploads
@@ -113,8 +115,8 @@ router.post('/triage/:reportId', protect, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error in manual triage:', error);
-    res.status(500).json({ message: error.message });
+    logger.error('Error in manual triage:', error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -122,7 +124,7 @@ router.post('/triage/:reportId', protect, async (req, res) => {
  * Translate text
  * POST /api/ai/translate
  */
-router.post('/translate', protect, async (req, res) => {
+router.post('/translate', protect, aiValidators.translate, async (req, res) => {
   try {
     const { text, targetLanguage, sourceLanguage } = req.body;
     
@@ -141,8 +143,8 @@ router.post('/translate', protect, async (req, res) => {
     res.json(result);
     
   } catch (error) {
-    console.error('Error in translation:', error);
-    res.status(500).json({ message: error.message });
+    logger.error('Error in translation:', error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -420,7 +422,7 @@ router.get('/chatbot/greeting', (req, res) => {
  * Chat with AI bot
  * POST /api/ai/chatbot/chat
  */
-router.post('/chatbot/chat', async (req, res) => {
+router.post('/chatbot/chat', protect, aiValidators.chatbot, async (req, res) => {
   try {
     const { sessionId, message } = req.body;
     
@@ -442,10 +444,10 @@ router.post('/chatbot/chat', async (req, res) => {
     res.json(sanitizedResponse);
     
   } catch (error) {
-    console.error('Chatbot error:', error);
+    logger.error('Chatbot error:', error.message);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to process chat message'
     });
   }
 });
@@ -454,7 +456,7 @@ router.post('/chatbot/chat', async (req, res) => {
  * Reset chatbot session
  * POST /api/ai/chatbot/reset
  */
-router.post('/chatbot/reset', (req, res) => {
+router.post('/chatbot/reset', protect, (req, res) => {
   try {
     const { sessionId } = req.body;
     
@@ -475,10 +477,10 @@ router.post('/chatbot/reset', (req, res) => {
     });
     
   } catch (error) {
-    console.error('Reset session error:', error);
+    logger.error('Reset session error:', error.message);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to reset session'
     });
   }
 });
@@ -495,10 +497,10 @@ router.get('/chatbot/stats', protect, (req, res) => {
       stats
     });
   } catch (error) {
-    console.error('Chatbot stats error:', error);
+    logger.error('Chatbot stats error:', error.message);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to get chatbot stats'
     });
   }
 });
@@ -507,7 +509,7 @@ router.get('/chatbot/stats', protect, (req, res) => {
  * Forensic image analysis - Single image
  * POST /api/ai/forensic/analyze
  */
-router.post('/forensic/analyze', upload.single('image'), async (req, res) => {
+router.post('/forensic/analyze', protect, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -527,10 +529,10 @@ router.post('/forensic/analyze', upload.single('image'), async (req, res) => {
     res.json(sanitizedAnalysis);
     
   } catch (error) {
-    console.error('Forensic analysis error:', error);
+    logger.error('Forensic analysis error:', error.message);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to analyze image'
     });
   }
 });
@@ -539,7 +541,7 @@ router.post('/forensic/analyze', upload.single('image'), async (req, res) => {
  * Forensic image analysis - Batch (up to 5 images)
  * POST /api/ai/forensic/batch
  */
-router.post('/forensic/batch', upload.array('images', 5), async (req, res) => {
+router.post('/forensic/batch', protect, upload.array('images', 5), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
@@ -565,10 +567,10 @@ router.post('/forensic/batch', upload.array('images', 5), async (req, res) => {
     res.json(sanitizedResult);
     
   } catch (error) {
-    console.error('Batch forensic analysis error:', error);
+    logger.error('Batch forensic analysis error:', error.message);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to analyze images'
     });
   }
 });
@@ -648,7 +650,7 @@ router.post('/forensic/report/:reportId', protect, async (req, res) => {
  * POST /api/ai/geospatial/verify
  * Body: image (file), category (string)
  */
-router.post('/geospatial/verify', upload.single('image'), async (req, res) => {
+router.post('/geospatial/verify', protect, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -667,7 +669,7 @@ router.post('/geospatial/verify', upload.single('image'), async (req, res) => {
 
     const imagePath = req.file.path;
 
-    console.log(`🌍 Verifying geospatial context for image: ${req.file.filename}, category: ${category}`);
+    logger.debug(`Verifying geospatial context for image: ${req.file.filename}, category: ${category}`);
 
     const verificationResult = await geospatialVerificationService.verifyGeospatialContext(
       imagePath,
@@ -677,10 +679,10 @@ router.post('/geospatial/verify', upload.single('image'), async (req, res) => {
     res.json(verificationResult);
 
   } catch (error) {
-    console.error('Geospatial verification error:', error);
+    logger.error('Geospatial verification error:', error.message);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to verify geospatial context'
     });
   }
 });
@@ -690,7 +692,7 @@ router.post('/geospatial/verify', upload.single('image'), async (req, res) => {
  * POST /api/ai/geospatial/batch
  * Body: images[] (files), categories[] (strings)
  */
-router.post('/geospatial/batch', upload.array('images', 5), async (req, res) => {
+router.post('/geospatial/batch', protect, upload.array('images', 5), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
@@ -707,14 +709,22 @@ router.post('/geospatial/batch', upload.array('images', 5), async (req, res) => 
       });
     }
 
-    // Parse categories if sent as JSON string
-    const categoryArray = typeof categories === 'string' 
-      ? JSON.parse(categories) 
-      : categories;
+    // Parse categories if sent as JSON string (with error handling)
+    let categoryArray;
+    try {
+      categoryArray = typeof categories === 'string'
+        ? JSON.parse(categories)
+        : categories;
+    } catch (parseError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid categories format'
+      });
+    }
 
     const imagePaths = req.files.map(file => file.path);
 
-    console.log(`🌍 Batch verifying ${imagePaths.length} images`);
+    logger.debug(`Batch verifying ${imagePaths.length} images`);
 
     const batchResult = await geospatialVerificationService.batchVerify(
       imagePaths,
@@ -724,10 +734,10 @@ router.post('/geospatial/batch', upload.array('images', 5), async (req, res) => 
     res.json(batchResult);
 
   } catch (error) {
-    console.error('Batch geospatial verification error:', error);
+    logger.error('Batch geospatial verification error:', error.message);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to verify geospatial context'
     });
   }
 });
@@ -769,7 +779,7 @@ router.post('/geospatial/report/:reportId', protect, async (req, res) => {
 
     const imagePath = path.join(__dirname, '..', report.images[imageIndex]);
 
-    console.log(`🌍 Verifying geospatial context for report ${reportId}, image ${imageIndex}`);
+    logger.debug(`Verifying geospatial context for report ${reportId}, image ${imageIndex}`);
 
     const verificationResult = await geospatialVerificationService.verifyGeospatialContext(
       imagePath,
@@ -807,10 +817,10 @@ router.post('/geospatial/report/:reportId', protect, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Report geospatial verification error:', error);
+    logger.error('Report geospatial verification error:', error.message);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to verify geospatial context'
     });
   }
 });
@@ -824,7 +834,7 @@ router.post('/geospatial/report/:reportId', protect, async (req, res) => {
  * POST /api/ai/linguistic/analyze
  * Body: { transcript: string }
  */
-router.post('/linguistic/analyze', async (req, res) => {
+router.post('/linguistic/analyze', protect, aiValidators.linguistic, async (req, res) => {
   try {
     const { transcript } = req.body;
 

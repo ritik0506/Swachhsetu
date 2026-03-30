@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { 
-  MapPin, 
-  Calendar, 
-  User, 
-  AlertTriangle, 
-  CheckCircle, 
+import {
+  MapPin,
+  Calendar,
+  User,
+  AlertTriangle,
+  CheckCircle,
   Clock,
   X,
   Filter,
@@ -18,6 +18,9 @@ import { adminAPI } from '../utils/api';
 import { toast } from 'react-toastify';
 import './WasteDumpMap.css';
 import 'leaflet/dist/leaflet.css';
+
+// Get base URL from environment
+const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
 // Fix Leaflet default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -360,8 +363,8 @@ const WasteDumpMap = () => {
                 
                 {report.images && report.images.length > 0 && (
                   <div className="popup-image-container">
-                    <img 
-                      src={`http://localhost:5000${report.images[0].url}`} 
+                    <img
+                      src={`${API_BASE_URL}${report.images[0].url}`}
                       alt={report.title}
                       className="popup-image"
                     />
@@ -426,9 +429,9 @@ const WasteDumpMap = () => {
                   <h3><ImageIcon size={18} /> Images</h3>
                   <div className="modal-images-grid">
                     {selectedReport.images.map((image, index) => (
-                      <img 
+                      <img
                         key={index}
-                        src={`http://localhost:5000${image.url}`}
+                        src={`${API_BASE_URL}${image.url}`}
                         alt={`Report ${index + 1}`}
                         className="modal-report-image"
                       />

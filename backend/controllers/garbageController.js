@@ -1,4 +1,6 @@
 const GarbageSchedule = require('../models/GarbageSchedule');
+const { createSafeRegex } = require('../utils/regexHelper');
+const logger = require('../utils/logger');
 
 // @desc    Get garbage schedule by area
 // @route   GET /api/garbage/schedule
@@ -9,23 +11,24 @@ exports.getScheduleByArea = async (req, res) => {
 
     let query = { isActive: true };
 
-    // Search by area name
+    // Search by area name (using safe regex)
     if (area) {
+      const safeAreaRegex = createSafeRegex(area);
       query.$or = [
-        { area: new RegExp(area, 'i') },
-        { ward: new RegExp(area, 'i') },
-        { zone: new RegExp(area, 'i') }
+        { area: safeAreaRegex },
+        { ward: safeAreaRegex },
+        { zone: safeAreaRegex }
       ];
     }
 
-    // Filter by ward
+    // Filter by ward (using safe regex)
     if (ward) {
-      query.ward = new RegExp(ward, 'i');
+      query.ward = createSafeRegex(ward);
     }
 
-    // Filter by zone
+    // Filter by zone (using safe regex)
     if (zone) {
-      query.zone = new RegExp(zone, 'i');
+      query.zone = createSafeRegex(zone);
     }
 
     // Geospatial search if coordinates provided
@@ -58,11 +61,10 @@ exports.getScheduleByArea = async (req, res) => {
       schedules: schedulesWithNext
     });
   } catch (error) {
-    console.error('Get schedule error:', error);
+    logger.error('Get schedule error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch garbage schedule',
-      error: error.message
+      message: 'Failed to fetch garbage schedule'
     });
   }
 };
@@ -91,11 +93,10 @@ exports.getScheduleById = async (req, res) => {
       schedule: scheduleObj
     });
   } catch (error) {
-    console.error('Get schedule by ID error:', error);
+    logger.error('Get schedule by ID error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch schedule',
-      error: error.message
+      message: 'Failed to fetch schedule'
     });
   }
 };
@@ -118,11 +119,10 @@ exports.createSchedule = async (req, res) => {
       message: 'Garbage schedule created successfully'
     });
   } catch (error) {
-    console.error('Create schedule error:', error);
+    logger.error('Create schedule error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Failed to create schedule',
-      error: error.message
+      message: 'Failed to create schedule'
     });
   }
 };
@@ -165,11 +165,10 @@ exports.updateSchedule = async (req, res) => {
       message: 'Schedule updated successfully'
     });
   } catch (error) {
-    console.error('Update schedule error:', error);
+    logger.error('Update schedule error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Failed to update schedule',
-      error: error.message
+      message: 'Failed to update schedule'
     });
   }
 };
@@ -195,11 +194,10 @@ exports.deleteSchedule = async (req, res) => {
       message: 'Schedule deleted successfully'
     });
   } catch (error) {
-    console.error('Delete schedule error:', error);
+    logger.error('Delete schedule error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Failed to delete schedule',
-      error: error.message
+      message: 'Failed to delete schedule'
     });
   }
 };
@@ -246,11 +244,10 @@ exports.subscribeToSchedule = async (req, res) => {
       message: 'Successfully subscribed to schedule notifications'
     });
   } catch (error) {
-    console.error('Subscribe error:', error);
+    logger.error('Subscribe error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Failed to subscribe',
-      error: error.message
+      message: 'Failed to subscribe'
     });
   }
 };
@@ -281,11 +278,10 @@ exports.unsubscribeFromSchedule = async (req, res) => {
       message: 'Successfully unsubscribed from schedule notifications'
     });
   } catch (error) {
-    console.error('Unsubscribe error:', error);
+    logger.error('Unsubscribe error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Failed to unsubscribe',
-      error: error.message
+      message: 'Failed to unsubscribe'
     });
   }
 };
@@ -308,11 +304,10 @@ exports.getUniqueLocations = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get locations error:', error);
+    logger.error('Get locations error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch locations',
-      error: error.message
+      message: 'Failed to fetch locations'
     });
   }
 };
@@ -347,11 +342,10 @@ exports.getTodaySchedules = async (req, res) => {
       schedules: todaySchedules
     });
   } catch (error) {
-    console.error('Get today schedules error:', error);
+    logger.error('Get today schedules error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch today\'s schedules',
-      error: error.message
+      message: 'Failed to fetch today\'s schedules'
     });
   }
 };
@@ -397,11 +391,10 @@ exports.markCollection = async (req, res) => {
       statistics: schedule.statistics
     });
   } catch (error) {
-    console.error('Mark collection error:', error);
+    logger.error('Mark collection error:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Failed to update collection status',
-      error: error.message
+      message: 'Failed to update collection status'
     });
   }
 };

@@ -2,58 +2,9 @@ const Report = require('../models/Report');
 const User = require('../models/User');
 const Gamification = require('../models/Gamification');
 const Notification = require('../models/Notification');
-
-// Helper function to award points (shared with reportController for consistency)
-const awardPoints = async (userId, points, action) => {
-  try {
-    let gamification = await Gamification.findOne({ userId });
-
-    if (!gamification) {
-      gamification = await Gamification.create({
-        userId,
-        totalPoints: 0,
-        stats: {}
-      });
-    }
-
-    gamification.totalPoints += points;
-
-    if (!gamification.stats) {
-      gamification.stats = {};
-    }
-    gamification.stats[action] = (gamification.stats[action] || 0) + 1;
-
-    // Update level (cap at 100 per FR-7 specification)
-    gamification.level.xp += points;
-    while (gamification.level.xp >= gamification.level.nextLevelXp && gamification.level.current < 100) {
-      gamification.level.current += 1;
-      gamification.level.xp -= gamification.level.nextLevelXp;
-      gamification.level.nextLevelXp = Math.floor(gamification.level.nextLevelXp * 1.5);
-
-      try {
-        await Notification.create({
-          userId,
-          type: 'level_up',
-          title: '🎉 Level Up!',
-          message: `Congratulations! You've reached level ${gamification.level.current}`,
-          priority: 'high'
-        });
-      } catch (notifError) {
-        console.warn('Failed to create level up notification:', notifError.message);
-      }
-    }
-
-    // If at max level (100), keep accumulating XP but don't level up
-    if (gamification.level.current >= 100) {
-      gamification.level.current = 100;
-    }
-
-    await gamification.save();
-  } catch (error) {
-    console.error('Award points error:', error);
-    throw error;
-  }
-};
+const { awardPoints } = require('../utils/gamification');
+const { createMongoRegex } = require('../utils/regexHelper');
+const logger = require('../utils/logger');
 
 // @desc    Get all reports for admin management
 // @route   GET /api/admin/reports
@@ -77,10 +28,11 @@ exports.getAllReports = async (req, res) => {
     if (category) query.category = category;
     if (severity) query.severity = severity;
     if (search) {
+      const searchRegex = createMongoRegex(search);
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { 'location.address': { $regex: search, $options: 'i' } }
+        { title: searchRegex },
+        { description: searchRegex },
+        { 'location.address': searchRegex }
       ];
     }
 
@@ -105,11 +57,10 @@ exports.getAllReports = async (req, res) => {
       totalReports: count
     });
   } catch (error) {
-    console.error('Get all reports error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch reports', 
-      error: error.message 
+    logger.error('Get all reports error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch reports'
     });
   }
 };
@@ -145,7 +96,7 @@ exports.updateReport = async (req, res) => {
       try {
         await awardPoints(report.userId, 50, 'reportsVerified');
       } catch (gamificationError) {
-        console.warn('Failed to award points:', gamificationError.message);
+        logger.warn('Failed to award points:', gamificationError.message);
       }
     }
 
@@ -172,11 +123,10 @@ exports.updateReport = async (req, res) => {
       message: 'Report updated successfully'
     });
   } catch (error) {
-    console.error('Update report error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update report', 
-      error: error.message 
+    logger.error('Update report error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update report'
     });
   }
 };
@@ -202,11 +152,10 @@ exports.deleteReport = async (req, res) => {
       message: 'Report deleted successfully'
     });
   } catch (error) {
-    console.error('Delete report error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to delete report', 
-      error: error.message 
+    logger.error('Delete report error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete report'
     });
   }
 };
@@ -220,9 +169,10 @@ exports.getAllUsers = async (req, res) => {
 
     const query = {};
     if (search) {
+      const searchRegex = createMongoRegex(search);
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { name: searchRegex },
+        { email: searchRegex }
       ];
     }
     if (role) query.role = role;
@@ -255,11 +205,10 @@ exports.getAllUsers = async (req, res) => {
       totalUsers: count
     });
   } catch (error) {
-    console.error('Get all users error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch users', 
-      error: error.message 
+    logger.error('Get all users error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch users'
     });
   }
 };
@@ -301,11 +250,10 @@ exports.updateUserRole = async (req, res) => {
       message: 'User role updated successfully'
     });
   } catch (error) {
-    console.error('Update user role error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update user role', 
-      error: error.message 
+    logger.error('Update user role error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update user role'
     });
   }
 };
@@ -446,11 +394,10 @@ exports.getAdminStatistics = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get admin statistics error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch statistics', 
-      error: error.message 
+    logger.error('Get admin statistics error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch statistics'
     });
   }
 };
@@ -490,7 +437,7 @@ exports.bulkUpdateReports = async (req, res) => {
           await awardPoints(report.userId, 50, 'reportsVerified');
         }
       } catch (gamificationError) {
-        console.warn('Failed to award points for bulk resolution:', gamificationError.message);
+        logger.warn('Failed to award points for bulk resolution:', gamificationError.message);
       }
     }
 
@@ -500,11 +447,10 @@ exports.bulkUpdateReports = async (req, res) => {
       modifiedCount: result.modifiedCount
     });
   } catch (error) {
-    console.error('Bulk update error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update reports', 
-      error: error.message 
+    logger.error('Bulk update error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update reports'
     });
   }
 };
@@ -579,11 +525,10 @@ exports.getWasteDumpMapData = async (req, res) => {
       totalReports: validReports.length
     });
   } catch (error) {
-    console.error('Get waste dump map data error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch waste dump map data', 
-      error: error.message 
+    logger.error('Get waste dump map data error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch waste dump map data'
     });
   }
 };

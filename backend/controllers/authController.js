@@ -2,10 +2,18 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Gamification = require('../models/Gamification');
+const logger = require('../utils/logger');
+
+// Validate JWT_SECRET at startup
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET environment variable is required in production');
+}
 
 // Generate JWT Token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', {
+  const secret = JWT_SECRET || 'development_secret_only';
+  return jwt.sign({ id }, secret, {
     expiresIn: '30d'
   });
 };
@@ -44,7 +52,7 @@ exports.register = async (req, res) => {
         userId: user._id
       });
     } catch (gamificationError) {
-      console.warn('Gamification profile creation failed:', gamificationError.message);
+      logger.warn('Gamification profile creation failed:', gamificationError.message);
     }
 
     // Generate token
@@ -63,11 +71,10 @@ exports.register = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Register error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Registration failed', 
-      error: error.message 
+    logger.error('Register error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Registration failed'
     });
   }
 };
@@ -119,11 +126,10 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Login failed', 
-      error: error.message 
+    logger.error('Login error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Login failed'
     });
   }
 };
@@ -142,11 +148,10 @@ exports.getMe = async (req, res) => {
       gamification
     });
   } catch (error) {
-    console.error('Get user error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch user data', 
-      error: error.message 
+    logger.error('Get user error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch user data'
     });
   }
 };
@@ -180,11 +185,10 @@ exports.updateProfile = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Update profile error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update profile', 
-      error: error.message 
+    logger.error('Update profile error:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update profile'
     });
   }
 };
